@@ -21,7 +21,7 @@ Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?user=root&password=root"
 Map<String, Object> attrs = new HashMap<>();
 attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/mysql?user=root&password=root");
 attrs.put("hibernate.hbm2ddl.auto", "update"); //自动更新表结构
-Repo repo = new Repo("testRepo", attrs).entities(Db.class).init();
+Repo repo = new Repo(attrs).entities(Db.class).init();
 ```
 ### 实体查询
 ```
