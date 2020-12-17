@@ -42,10 +42,6 @@ public class Repo {
      */
     protected final Map<String, Object> attrs;
     /**
-     * 当前数据源名
-     */
-    protected final String              name;
-    /**
      * {@link SessionFactory}
      */
     protected       SessionFactory      sf;
@@ -59,14 +55,13 @@ public class Repo {
     protected final List<Class>         entities = new LinkedList<>();
 
 
-    public Repo() { this("jpa", null); }
+    public Repo() { this((Map<String, Object>) null); }
 
     /**
      * 连接url
      * @param url
      */
     public Repo(String url) {
-        this.name = "jpa";
         this.attrs = new ConcurrentHashMap<>();
         attrs.put("url", url); attrs.put("jdbcUrl", url);
     }
@@ -80,7 +75,6 @@ public class Repo {
      * @param maxActive 最大活动连接
      */
     public Repo(String jdbcUrl, String username, String password, Integer minIdle, Integer maxActive) {
-        this.name = "jpa";
         this.attrs = new ConcurrentHashMap<>();
         attrs.put("url", jdbcUrl); attrs.put("jdbcUrl", jdbcUrl);
         attrs.put("minIdle", minIdle); attrs.put("minimumIdle", minIdle);
@@ -88,9 +82,8 @@ public class Repo {
         attrs.put("username", username); attrs.put("password", password);
     }
 
-    public Repo(String name, Map<String, Object> attrs) {
+    public Repo(Map<String, Object> attrs) {
         this.attrs = attrs == null ? new ConcurrentHashMap<>() : attrs;
-        this.name = name == null ? "jpa" : name;
     }
 
 
@@ -99,13 +92,12 @@ public class Repo {
      * @return
      */
     public Repo init() {
-        if (sf != null) throw new RuntimeException(name + " is already inited");
+        if (sf != null) throw new RuntimeException("Already inited");
 
         //1. 数据源
         if (datasource != null) throw new RuntimeException("DataSource already exist");
         datasource = createDataSource(attrs);
         if (datasource == null) throw new RuntimeException("Not found DataSource implement class");
-        log.debug("{} Created datasource {}", name, datasource);
 
         //2. 初始化Hibernate. 可配置的属性名 AvailableSettings
         Map<String, Object> props = new HashMap<>(attrs);
@@ -113,8 +105,6 @@ public class Repo {
         props.putIfAbsent("hibernate.physical_naming_strategy", PhysicalNaming.class);
         props.putIfAbsent("hibernate.implicit_naming_strategy", ImplicitNaming.class);
         sf = createSessionFactory(datasource, props, entities);
-
-        log.info("Created {}(Hibernate) client", name);
         return this;
     }
 
@@ -123,12 +113,11 @@ public class Repo {
      * 关闭Repo
      */
     public void close() {
-        log.debug("Close '{}(Hibernate)' Client", name);
         try {
+            sf.close(); sf = null;
             datasource.getClass().getMethod("close").invoke(datasource);
             datasource = null;
         } catch (Exception e) {}
-        sf.close(); sf = null;
     }
 
 

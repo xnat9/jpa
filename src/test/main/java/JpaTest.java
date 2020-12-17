@@ -13,15 +13,15 @@ public class JpaTest {
 
     public static void main(String[] args) {
         Map<String, Object> attrs = new HashMap<>();
-        attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/mysql?user=root&password=root");
+        attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root");
         attrs.put("hibernate.hbm2ddl.auto", "update");
-        Repo repo = new Repo("testRepo", attrs).init();
+        Repo repo = new Repo(attrs).init();
     }
 
 
     @Test
     void testGetDbName() {
-        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?user=root&password=root").init();
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
         log.info(repo.getDbName());
         repo.close();
     }
@@ -29,7 +29,7 @@ public class JpaTest {
 
     @Test
     void testGetJdbcUrl() {
-        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?user=root&password=root").init();
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
         log.info(repo.getJdbcUrl());
         repo.close();
     }
@@ -37,7 +37,7 @@ public class JpaTest {
 
     @Test
     void testEntity() {
-        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?user=root&password=root").entities(Db.class).init();
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").entities(Db.class).init();
         log.info(repo.find(Db.class, (root, query, cb) -> cb.equal(root.get("Db"), "sys")).Host);
         repo.close();
     }
@@ -45,7 +45,7 @@ public class JpaTest {
 
     @Test
     void testEntityPage() {
-        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?user=root&password=root").entities(Db.class).init();
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").entities(Db.class).init();
         log.info(repo.findPage(Db.class, 1, 10, (root, query, cb) -> cb.equal(root.get("Db"), "sys")).toString());
         repo.close();
     }
@@ -53,7 +53,7 @@ public class JpaTest {
 
     @Test
     void testSqlFirstRow() {
-        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?user=root&password=root").init();
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
         log.info(repo.firstRow("select count(1) as total from db").get("total").toString());
         repo.close();
     }
@@ -61,15 +61,15 @@ public class JpaTest {
 
     @Test
     void testSqlFirstRowWithParam() {
-        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?user=root&password=root").init();
-        log.info(repo.firstRow("select * from db where Db=?", "sys").toString());
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
+        log.info(repo.firstRow("select * from db where Db=?useSSL=false&", "sys").toString());
         repo.close();
     }
 
 
     @Test
     void testSqlRows() {
-        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?user=root&password=root").init();
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
         log.info(repo.rows("select * from db").toString());
         repo.close();
     }

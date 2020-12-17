@@ -8,7 +8,7 @@ import javax.persistence.MappedSuperclass;
 
 
 @MappedSuperclass
-public class GUIDEntity {
+public class GUIDEntity extends BaseEntity {
     @Id
     @GeneratedValue(generator = "guid")
     @GenericGenerator(name = "guid", strategy = "org.hibernate.id.GUIDGenerator")

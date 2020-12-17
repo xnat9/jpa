@@ -11,7 +11,7 @@ import javax.persistence.MappedSuperclass;
  * UUID 为主键的实体
  */
 @MappedSuperclass
-public class UUIDEntity {
+public class UUIDEntity extends BaseEntity {
     @Id
     @GeneratedValue(generator = "uuid")
     @GenericGenerator(name = "uuid", strategy = "org.hibernate.id.UUIDHexGenerator")
