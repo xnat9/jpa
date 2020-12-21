@@ -10,20 +10,34 @@ import java.util.stream.Collectors;
  * @param <E>
  */
 public class Page<E> {
-    // 当前页码: 从1开始
+    /**
+     * 当前页码: 从1开始
+     */
     private Integer       page;
-    // 一页数据大小
+    /**
+     * 一页数据大小
+     */
     private Integer       pageSize;
-    // 总条数
+    /**
+     * 总条数
+     */
     private Long          totalRow;
-    // 总页数
+    /**
+     * 总页数
+     */
     private Integer       totalPage;
-    // 当前页数据
+    /**
+     * 当前页数据
+     */
     private Collection<E> list;
 
 
+    /**
+     * 创建一个空的{@link Page}
+     * @return
+     */
     public static Page empty() {
-        return new Page().setPage(1).setPageSize(10).setTotalRow(0L).setList(Collections.emptyList());
+        return new Page().setPage(1).setPageSize(1).setTotalRow(0L).setList(Collections.emptyList());
     }
 
 
@@ -37,6 +51,11 @@ public class Page<E> {
     }
 
 
+    /**
+     * 设置总条数, 并计算总页数
+     * @param totalRow 总条数
+     * @return
+     */
     public Page setTotalRow(Long totalRow) {
         this.totalRow = totalRow;
         if (totalRow != null) {
@@ -44,6 +63,7 @@ public class Page<E> {
         }
         return this;
     }
+
 
     public Integer getPageSize() {
         return pageSize;

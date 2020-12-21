@@ -6,7 +6,7 @@ jpa: 封装hibernate
 <dependency>
     <groupId>cn.xnatural.jpa</groupId>
     <artifactId>jpa</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -14,13 +14,13 @@ jpa: 封装hibernate
 ### 创建
 ```
 // 根据jdbcUrl 创建
-Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?user=root&password=root").init();
+Repo repo = new Repo("jdbc:mysql://localhost:3306/test?user=root&password=root").init();
 ```
 ```
 // 根据属性集创建
 Map<String, Object> attrs = new HashMap<>();
-attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/mysql?user=root&password=root");
-attrs.put("hibernate.hbm2ddl.auto", "update"); //自动更新表结构
+attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/test?user=root&password=root");
+attrs.put("hibernate.hbm2ddl.auto", "update"); //update: 自动根据实体更新表结构, none: 不更新
 Repo repo = new Repo(attrs).entities(Db.class).init();
 ```
 ### 实体查询
@@ -40,7 +40,7 @@ Db db = repo.find(Db.class, (root, query, cb) -> cb.equal(root.get("Db"), "sys")
 
 #### 分页查询实体
 ```
-repo.findPage(Db.class, 1, 10, (root, query, cb) -> cb.equal(root.get("Db"), "sys"));
+Page<Db> pageData = repo.findPage(Db.class, 1, 10, (root, query, cb) -> cb.equal(root.get("Db"), "sys"));
 ```
 
 #### 其它实体方法
@@ -64,18 +64,37 @@ repo.count(实体Class, 条件(可选))
 repo.firstRow("select count(1) as total from db").get("total")
 // 2. 传参
 Map<String, Object> result = repo.firstRow("select * from db where Db=?", "sys");
+// 3. 包装结果
+Db result = repo.firstRow("select * from db where Db=?", Db.class, "sys");
 ```
 
 #### 查询多条数据
 ```
-List<Map<String, Object>> results = repo.rows("select * from db limit 10")
+// 1. 默认返回List<Map>
+List<Map<String, Object>> results = repo.rows("select * from db limit ?", 10);
+// 2. 指定返回结果
+List<Db> results = repo.rows("select * from db where Db=?", Db.class, "sys");
+// 3. 分页查询
+Page<Db> pageData = repo.sqlPage("select * from db where Db=?", 1, 10, Db.class, "sys");
 ```
 
 ### 自定义操作
 ```
+// 1. 其它自定义查询
 repo.trans(session -> {
     // TODO
+    // session.createQuery(hql);// hql查询
     return null;
+})
+// 2. 事务成功/失败回调
+repo.trans(session -> {
+    // TODO
+    // session.createQuery(hql);// hql查询
+    return null;
+}, () -> {
+    // TODO 成功执行
+}, (ex) -> {
+    // TODO 失败执行
 })
 ```
 

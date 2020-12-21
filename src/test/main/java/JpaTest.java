@@ -13,9 +13,10 @@ public class JpaTest {
 
     public static void main(String[] args) {
         Map<String, Object> attrs = new HashMap<>();
-        attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root");
-        attrs.put("hibernate.hbm2ddl.auto", "update");
-        Repo repo = new Repo(attrs).init();
+        attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root");
+        attrs.put("hibernate.hbm2ddl.auto", "update"); //update: 自动根据实体更新表结构, none: 不更新
+        Repo repo = new Repo(attrs).entities(Db.class).init();
+        repo.close();
     }
 
 
@@ -62,7 +63,7 @@ public class JpaTest {
     @Test
     void testSqlFirstRowWithParam() {
         Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
-        log.info(repo.firstRow("select * from db where Db=?useSSL=false&", "sys").toString());
+        log.info(repo.firstRow("select * from db where Db=?",  Db.class,"sys").toString());
         repo.close();
     }
 
@@ -70,7 +71,23 @@ public class JpaTest {
     @Test
     void testSqlRows() {
         Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
-        log.info(repo.rows("select * from db").toString());
+        log.info(repo.rows("select * from db where Db=?", "sys").toString());
+        repo.close();
+    }
+
+
+    @Test
+    void testSqlRowsWithWrap() {
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
+        log.info(repo.rows("select * from db where Db=?", Db.class, "sys").toString());
+        repo.close();
+    }
+
+
+    @Test
+    void testSqlPage() {
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
+        log.info(repo.sqlPage("select * from db where Db=?", 1, 10, Db.class, "sys").toString());
         repo.close();
     }
 }

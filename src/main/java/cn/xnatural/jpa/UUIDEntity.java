@@ -17,9 +17,9 @@ public class UUIDEntity extends BaseEntity {
     @GenericGenerator(name = "uuid", strategy = "org.hibernate.id.UUIDHexGenerator")
     private String id;
 
-    public String getId() {
-        return id;
-    }
+
+    public String getId() { return id; }
+
 
     public UUIDEntity setId(String id) {
         this.id = id;

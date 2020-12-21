@@ -13,6 +13,8 @@ import org.hibernate.query.Query;
 import org.hibernate.query.internal.NativeQueryImpl;
 import org.hibernate.query.spi.NativeQueryImplementor;
 import org.hibernate.service.UnknownUnwrapTypeException;
+import org.hibernate.transform.BasicTransformerAdapter;
+import org.hibernate.transform.ResultTransformer;
 import org.hibernate.transform.Transformers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,8 @@ import javax.sql.DataSource;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -67,7 +71,7 @@ public class Repo {
     }
 
     /**
-     *
+     * 指定jdbcUrl创建Repo
      * @param jdbcUrl jdbc连接串
      * @param username 用户名
      * @param password 密码
@@ -82,9 +86,11 @@ public class Repo {
         attrs.put("username", username); attrs.put("password", password);
     }
 
-    public Repo(Map<String, Object> attrs) {
-        this.attrs = attrs == null ? new ConcurrentHashMap<>() : attrs;
-    }
+    /**
+     * 根据属性集创建Repo
+     * @param attrs
+     */
+    public Repo(Map<String, Object> attrs) { this.attrs = attrs == null ? new ConcurrentHashMap<>() : attrs; }
 
 
     /**
@@ -195,6 +201,7 @@ public class Repo {
      * @return 数据库名
      */
     public String getDbName() {
+        if (sf == null) throw new RuntimeException("Please init first");
          return ((SessionFactoryImpl) sf).getJdbcServices().getJdbcEnvironment().getCurrentCatalog().getText();
     }
 
@@ -223,13 +230,14 @@ public class Repo {
      * @return <E>
      */
     public <E extends IEntity> E saveOrUpdate(E entity) {
-        return trans((se) -> {
+        if (entity == null) throw new IllegalArgumentException("Param entity required");
+        return trans(session -> {
             if (entity instanceof BaseEntity) {
                 Date d = new Date();
                 if (((BaseEntity) entity).getCreateTime() == null) ((BaseEntity) entity).setCreateTime(d);
                 ((BaseEntity) entity).setUpdateTime(d);
             }
-            se.saveOrUpdate(entity);
+            session.saveOrUpdate(entity);
             return entity;
         });
     }
@@ -242,8 +250,8 @@ public class Repo {
      * @return
      */
     public <T extends IEntity> T findById(Class<T> eType, Serializable id) {
-        if (eType == null) throw new IllegalArgumentException("eType must not be null");
-        return trans((se) -> se.get(eType, id));
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        return trans(session -> session.get(eType, id));
     }
 
 
@@ -254,13 +262,14 @@ public class Repo {
      * @return <T> 实体对象
      */
     public <T extends IEntity> T find(Class<T> eType, CriteriaSpec spec) {
-        return trans((s) -> {
-                CriteriaBuilder cb = s.getCriteriaBuilder();
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        return trans(session -> {
+            CriteriaBuilder cb = session.getCriteriaBuilder();
             CriteriaQuery<T> query = cb.createQuery(eType);
             Root<T> root = query.from(eType);
             Object p = spec == null ? null : spec.toPredicate(root, query, cb);
             if (p instanceof Predicate) query.where((Predicate) p);
-            List<T> ls = s.createQuery(query).setMaxResults(1).list();
+            List<T> ls = session.createQuery(query).setMaxResults(1).list();
             return (ls.size() == 1 ? ls.get(0) : null);
         });
     }
@@ -271,7 +280,10 @@ public class Repo {
      * @param entity 实体对象
      * @param <E>
      */
-    public <E extends IEntity> void delete(E entity) { trans(s -> {s.delete(entity); return null;});}
+    public <E extends IEntity> void delete(E entity) {
+        if (entity == null) throw new IllegalArgumentException("Param entity required");
+        trans(session -> {session.delete(entity); return null;});
+    }
 
 
     /**
@@ -282,8 +294,9 @@ public class Repo {
      * @return true: 删除成功
      */
     public <E extends IEntity> boolean delete(Class<E> eType, Serializable id) {
-        if (eType == null) throw new IllegalArgumentException("eType must not be null");
-        return trans(s -> s.createQuery("delete from " + eType.getSimpleName() + " where id=:id")
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        if (id == null) throw new IllegalArgumentException("Param id required");
+        return trans(session -> session.createQuery("delete from " + eType.getSimpleName() + " where id=:id")
                 .setParameter("id", id)
                 .executeUpdate() > 0
         );
@@ -294,11 +307,24 @@ public class Repo {
      * sql 查询 一行数据
      * @param sql sql 语句
      * @param params 参数
-     * @return
+     * @return {@link Map}
      */
-    public Map<String, Object> firstRow(String sql, Object...params) {
-        return (Map<String, Object>) trans(se -> {
-            NativeQueryImplementor query = se.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP);
+    public Map firstRow(String sql, Object...params) { return firstRow(sql, Map.class, params); }
+
+
+    /**
+     * sql 查询 一行数据
+     * @param sql sql 语句
+     * @param wrap 返回结果包装的类型
+     * @param params 参数
+     * @param <T>
+     * @return T
+     */
+    public <T> T firstRow(String sql, Class<T> wrap, Object...params) {
+        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
+        if (wrap == null) throw new IllegalArgumentException("Param warp required");
+        return (T) trans(session -> {
+            NativeQueryImplementor query = session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap));
             if (params != null && params.length > 0) {
                 for (int i = 0; i < params.length; i++) {
                     query.setParameter(i+1, params[i]);
@@ -311,14 +337,27 @@ public class Repo {
 
 
     /**
-     * sql 查询
-     * @param sql sql
+     * sql 多条查询
+     * @param sql sql 语句
      * @param params 参数
      * @return
      */
-    public List<Map<String, Object>> rows(String sql, Object...params) {
-        return trans(se -> {
-            NativeQueryImplementor query = se.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP);
+    public List<Map> rows(String sql, Object...params) { return rows(sql, Map.class, params); }
+
+
+    /**
+     * sql 多条查询
+     * @param sql sql
+     * @param wrap 返回结果包装的类型
+     * @param params sql参数
+     * @param <T>
+     * @return
+     */
+    public <T> List<T> rows(String sql, Class<T> wrap, Object...params) {
+        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
+        if (wrap == null) throw new IllegalArgumentException("Param warp required");
+        return trans(session -> {
+            NativeQueryImplementor query = session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap));
             if (params != null && params.length > 0) {
                 for (int i = 0; i < params.length; i++) {
                     query.setParameter(i+1, params[i]);
@@ -326,6 +365,107 @@ public class Repo {
             }
             return query.list();
         });
+    }
+
+
+    /**
+     * sql 分页查询
+     * @param sql sql 语句
+     * @param page 第几页 >=1
+     * @param pageSize 每页大小 >=1
+     * @param params sql参数
+     * @return {@link Page}
+     */
+    public Page<Map> sqlPage(String sql, Integer page, Integer pageSize, Object...params) {
+        return sqlPage(sql, page, pageSize, Map.class, params);
+    }
+
+
+    /**
+     * sql 分页查询
+     * @param sql sql 语句
+     * @param page 第几页 >=1
+     * @param pageSize 每页大小 >=1
+     * @param wrap 结果包装类型
+     * @param params sql参数
+     * @param <T>
+     * @return {@link Page}
+     */
+    public <T> Page<T> sqlPage(String sql, Integer page, Integer pageSize, Class<T> wrap, Object...params) {
+        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
+        if (wrap == null) throw new IllegalArgumentException("Param warp required");
+        if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
+        if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
+        return trans(session -> {
+            // 当前页数据查询
+            NativeQueryImplementor listQuery = session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap));
+            if (params != null && params.length > 0) {
+                for (int i = 0; i < params.length; i++) {
+                    listQuery.setParameter(i+1, params[i]);
+                }
+            }
+            // 总条数查询
+            NativeQueryImplementor countQuery = session.createNativeQuery("select count(1) from (" + sql + ") t1").unwrap(NativeQueryImpl.class);
+            if (params != null && params.length > 0) {
+                for (int i = 0; i < params.length; i++) {
+                    countQuery.setParameter(i+1, params[i]);
+                }
+            }
+            return new Page<>().setPage(page).setPageSize(pageSize)
+                    .setList(listQuery.setFirstResult((page - 1) * pageSize).setMaxResults(pageSize).list())
+                    .setTotalRow(((Number) countQuery.setMaxResults(1).getSingleResult()).longValue());
+        });
+    }
+
+
+    /**
+     * 结果解析通用工具
+     * @param wrap 类型
+     * @return
+     */
+    protected <T> ResultTransformer warpTransformer(Class<T> wrap) {
+        return Map.class.isAssignableFrom(wrap) ? Transformers.ALIAS_TO_ENTITY_MAP : new BasicTransformerAdapter() {
+            T t;
+            @Override
+            public Object transformTuple(Object[] tuple, String[] aliases) {
+                try {
+                    t = wrap.newInstance();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                for (int i=0; i<tuple.length; i++ ) {
+                    String alias = aliases[i];
+                    if (alias != null) {
+                        try {
+                            set(alias, tuple[i]);
+                        } catch (Exception e) {
+                            log.error("Set property error. type: " + wrap.getName() + ", property: " + alias, e);
+                        }
+                    }
+                }
+                return t;
+            }
+
+            // 为属性或字段设值
+            void set(String alias, Object value) throws Exception {
+                if (value == null) return;
+                try {
+                    Method setter = wrap.getMethod("set" + (alias.substring(0,1).toUpperCase() + alias.substring(1)), value.getClass());
+                    if (setter != null) {
+                        setter.setAccessible(true);
+                        setter.invoke(t, value);
+                        return;
+                    }
+                } catch (NoSuchMethodException e) {/** ignore **/}
+                try {
+                    Field field = wrap.getField(alias);
+                    if (field != null) {
+                        field.setAccessible(true);
+                        field.set(t, value);
+                    }
+                } catch (NoSuchFieldException e) {/** ignore **/}
+            }
+        };
     }
 
 
@@ -349,16 +489,16 @@ public class Repo {
      * @return list
      */
     public <E extends IEntity> List<E> findList(Class<E> eType, Integer start, Integer limit, CriteriaSpec spec) {
-        if (eType == null) throw new IllegalArgumentException("eType must not be null");
-        if (start != null && start < 0) throw new IllegalArgumentException("start must >= 0 or not give");
-        if (limit != null && limit <= 0) throw new IllegalArgumentException("limit must > 0 or not give");
-        return trans(s -> {
-            CriteriaBuilder cb = s.getCriteriaBuilder();
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        if (start != null && start < 0) throw new IllegalArgumentException("Param start >= 0 or not give");
+        if (limit != null && limit <= 0) throw new IllegalArgumentException("Param limit must > 0 or not give");
+        return trans(session -> {
+            CriteriaBuilder cb = session.getCriteriaBuilder();
             CriteriaQuery<E> cQuery = cb.createQuery(eType);
             Root<E> root = cQuery.from(eType);
             Object p = spec == null ? null : spec.toPredicate(root, cQuery, cb);
             if (p instanceof Predicate) cQuery.where((Predicate) p);
-            Query<E> query = s.createQuery(cQuery);
+            Query<E> query = session.createQuery(cQuery);
             if (start != null) query.setFirstResult(start);
             if (limit != null) query.setMaxResults(limit);
             return query.list();
@@ -388,18 +528,18 @@ public class Repo {
      * @return {@link Page<E>}
      */
     public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec spec) {
-        if (eType == null) throw new IllegalArgumentException("eType must not be null");
-        if (page == null || page < 1) throw new IllegalArgumentException("page: " + page + ", must >=1");
-        if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("pageSize: " + pageSize + ", must >=1");
-        return trans(s -> {
-            CriteriaBuilder cb = s.getCriteriaBuilder();
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
+        if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
+        return trans(session -> {
+            CriteriaBuilder cb = session.getCriteriaBuilder();
             CriteriaQuery<E> query = cb.createQuery(eType);
             Root<E> root = query.from(eType);
             Object p = spec == null ? null : spec.toPredicate(root, query, cb);
             if (p instanceof Predicate) query.where((Predicate) p);
-            return new Page<E>().setPage(page).setPageSize(pageSize).setList(
-                    s.createQuery(query).setFirstResult((page - 1) * pageSize).setMaxResults(pageSize).list()
-            ).setTotalRow(count(eType, spec));
+            return new Page<E>().setPage(page).setPageSize(pageSize)
+                    .setList(session.createQuery(query).setFirstResult((page - 1) * pageSize).setMaxResults(pageSize).list())
+                    .setTotalRow(count(eType, spec));
         });
     }
 
@@ -420,9 +560,9 @@ public class Repo {
      * @return
      */
     public <E extends IEntity> long count(Class<E> eType, CriteriaSpec spec) {
-        if (eType == null) throw new IllegalArgumentException("eType must not be null");
-        return trans(s -> {
-            CriteriaBuilder cb = s.getCriteriaBuilder();
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        return trans(session -> {
+            CriteriaBuilder cb = session.getCriteriaBuilder();
             CriteriaQuery<Long> query = cb.createQuery(Long.class);
             Root<E> root = query.from(eType);
             Object p = spec == null ? null : spec.toPredicate(root, query, cb);
@@ -430,7 +570,7 @@ public class Repo {
             else query.select(cb.count(root));
             query.orderBy(Collections.emptyList());
             if (p instanceof Predicate) query.where((Predicate) p);
-            return s.createQuery(query).getSingleResult();
+            return ((Number) session.createQuery(query).getSingleResult()).longValue();
         });
     }
 
@@ -508,7 +648,8 @@ public class Repo {
         catch(ClassNotFoundException ex) {}
         catch(Exception ex) { throw new RuntimeException(ex); }
 
-        if (ds == null) {// Hikari 数据源
+        // Hikari 数据源
+        if (ds == null) {
             try {
                 Class<?> clz = Class.forName("com.zaxxer.hikari.HikariDataSource");
                 ds = (DataSource) clz.newInstance();

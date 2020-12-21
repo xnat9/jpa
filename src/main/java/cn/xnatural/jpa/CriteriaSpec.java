@@ -9,5 +9,12 @@ import javax.persistence.criteria.Root;
  * @param <E>
  */
 public interface CriteriaSpec<E> {
+    /**
+     * 查询条件构建
+     * @param root
+     * @param query
+     * @param cb
+     * @return
+     */
     E toPredicate(Root<E> root, CriteriaQuery<?> query, CriteriaBuilder cb);
 }

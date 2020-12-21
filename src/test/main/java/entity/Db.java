@@ -12,12 +12,23 @@ public class Db implements IEntity {
     @Id
     public String Db;
     public String Host;
+    private String User;
+
+    public String getUser() {
+        return User;
+    }
+
+    public Db setUser(String user) {
+        User = user;
+        return this;
+    }
 
     @Override
     public String toString() {
-        return "Db{" +
-                "Db='" + Db + '\'' +
+        return "Db@" + Integer.toHexString(hashCode()) +
+                "{Db='" + Db + '\'' +
                 ", Host='" + Host + '\'' +
+                ", User='" + User + '\'' +
                 '}';
     }
 }
