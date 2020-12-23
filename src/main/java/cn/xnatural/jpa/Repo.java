@@ -88,14 +88,14 @@ public class Repo {
 
     /**
      * 根据属性集创建Repo
-     * @param attrs
+     * @param attrs 属性集
      */
     public Repo(Map<String, Object> attrs) { this.attrs = attrs == null ? new ConcurrentHashMap<>() : attrs; }
 
 
     /**
      * 初始化
-     * @return
+     * @return 当前 {@link Repo}
      */
     public Repo init() {
         if (sf != null) throw new RuntimeException("Already inited");
@@ -129,8 +129,8 @@ public class Repo {
 
     /**
      * 添加被管理的实体类
-     * @param clzs
-     * @return
+     * @param clzs 实体类
+     * @return 当前 {@link Repo}
      */
     public Repo entities(Class... clzs) {
         if (sf != null) throw new RuntimeException("Already inited");
@@ -147,7 +147,7 @@ public class Repo {
      * @param fn 数据库操作函数
      * @param okFn 执行成功后回调
      * @param failFn 执行失败后回调
-     * @return
+     * @return {@link T}
      */
     public <T> T trans(Function<Session, T> fn, Runnable okFn, Consumer<Exception> failFn) {
         if (sf == null) throw new RuntimeException("Please init first");
@@ -180,14 +180,14 @@ public class Repo {
      * {@link #trans(Function, Runnable, Consumer)}
      * @param fn 数据库操作函数. 事务
      * @param <T>
-     * @return
+     * @return {@link T}
      */
     public <T> T trans(Function<Session, T> fn) { return trans(fn, null, null); }
 
 
     /**
      * 根据实体类, 查表名字
-     * @param eType
+     * @param eType 实体Class
      * @return 表名
      */
     public String tbName(Class<IEntity> eType) {
@@ -227,7 +227,7 @@ public class Repo {
     /**
      * 保存/更新实体
      * @param entity
-     * @return <E>
+     * @return 实体{@link E}
      */
     public <E extends IEntity> E saveOrUpdate(E entity) {
         if (entity == null) throw new IllegalArgumentException("Param entity required");
@@ -247,9 +247,9 @@ public class Repo {
      * 根据id查找实体
      * @param eType 实体类型
      * @param id id
-     * @return
+     * @return 实体{@link E}
      */
-    public <T extends IEntity> T findById(Class<T> eType, Serializable id) {
+    public <E extends IEntity> E findById(Class<E> eType, Serializable id) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> session.get(eType, id));
     }
@@ -259,17 +259,17 @@ public class Repo {
      * 查询
      * @param eType 实体类型
      * @param spec 条件
-     * @return <T> 实体对象
+     * @return 实体{@link E}
      */
-    public <T extends IEntity> T find(Class<T> eType, CriteriaSpec spec) {
+    public <E extends IEntity> E find(Class<E> eType, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();
-            CriteriaQuery<T> query = cb.createQuery(eType);
-            Root<T> root = query.from(eType);
+            CriteriaQuery<E> query = cb.createQuery(eType);
+            Root<E> root = query.from(eType);
             Object p = spec == null ? null : spec.toPredicate(root, query, cb);
             if (p instanceof Predicate) query.where((Predicate) p);
-            List<T> ls = session.createQuery(query).setMaxResults(1).list();
+            List<E> ls = session.createQuery(query).setMaxResults(1).list();
             return (ls.size() == 1 ? ls.get(0) : null);
         });
     }
@@ -307,7 +307,7 @@ public class Repo {
      * sql 查询 一行数据
      * @param sql sql 语句
      * @param params 参数
-     * @return {@link Map}
+     * @return 一条记录 {@link Map}
      */
     public Map firstRow(String sql, Object...params) { return firstRow(sql, Map.class, params); }
 
@@ -317,13 +317,13 @@ public class Repo {
      * @param sql sql 语句
      * @param wrap 返回结果包装的类型
      * @param params 参数
-     * @param <T>
-     * @return T
+     * @param <R>
+     * @return 一条记录 {@link R}
      */
-    public <T> T firstRow(String sql, Class<T> wrap, Object...params) {
+    public <R> R firstRow(String sql, Class<R> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
-        return (T) trans(session -> {
+        return (R) trans(session -> {
             NativeQueryImplementor query = session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap));
             if (params != null && params.length > 0) {
                 for (int i = 0; i < params.length; i++) {
@@ -340,7 +340,7 @@ public class Repo {
      * sql 多条查询
      * @param sql sql 语句
      * @param params 参数
-     * @return
+     * @return 多条记录 {@link List<Map>}
      */
     public List<Map> rows(String sql, Object...params) { return rows(sql, Map.class, params); }
 
@@ -350,10 +350,10 @@ public class Repo {
      * @param sql sql
      * @param wrap 返回结果包装的类型
      * @param params sql参数
-     * @param <T>
-     * @return
+     * @param <R> 包装类型
+     * @return 多条记录 {@link List<R>}
      */
-    public <T> List<T> rows(String sql, Class<T> wrap, Object...params) {
+    public <R> List<R> rows(String sql, Class<R> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
         return trans(session -> {
@@ -374,7 +374,7 @@ public class Repo {
      * @param page 第几页 >=1
      * @param pageSize 每页大小 >=1
      * @param params sql参数
-     * @return {@link Page}
+     * @return 一页记录 {@link Page<Map>}
      */
     public Page<Map> sqlPage(String sql, Integer page, Integer pageSize, Object...params) {
         return sqlPage(sql, page, pageSize, Map.class, params);
@@ -389,7 +389,7 @@ public class Repo {
      * @param wrap 结果包装类型
      * @param params sql参数
      * @param <T>
-     * @return {@link Page}
+     * @return 一页记录 {@link Page<T>}
      */
     public <T> Page<T> sqlPage(String sql, Integer page, Integer pageSize, Class<T> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
@@ -421,7 +421,7 @@ public class Repo {
     /**
      * 结果解析通用工具
      * @param wrap 类型
-     * @return
+     * @return {@link ResultTransformer}
      */
     protected <T> ResultTransformer warpTransformer(Class<T> wrap) {
         return Map.class.isAssignableFrom(wrap) ? Transformers.ALIAS_TO_ENTITY_MAP : new BasicTransformerAdapter() {
@@ -470,10 +470,20 @@ public class Repo {
 
 
     /**
+     * 查询全部数据
+     * @param eType 实体类型
+     * @return 全部数据 {@link List<E>}
+     */
+    public <E extends IEntity> List<E> findAll(Class<E> eType) {
+        return findList(eType, null, null, null);
+    }
+
+
+    /**
      * 查询多条数据
      * @param eType 实体类型
      * @param spec 条件
-     * @return
+     * @return 多个实体 {@link List<E>}
      */
     public <E extends IEntity> List<E> findList(Class<E> eType, CriteriaSpec spec) {
         return findList(eType, null, null, spec);
@@ -485,8 +495,20 @@ public class Repo {
      * @param eType 实体类型
      * @param start 开始行 从0开始
      * @param limit 条数限制
+     * @return 多个实体 {@link List<E>}
+     */
+    public <E extends IEntity> List<E> findList(Class<E> eType, Integer start, Integer limit) {
+        return findList(eType, start, limit, null);
+    }
+
+
+    /**
+     * 查询多条数据
+     * @param eType 实体类型
+     * @param start 开始行 从0开始
+     * @param limit 条数限制
      * @param spec 条件
-     * @return list
+     * @return 多个实体 {@link List<E>}
      */
     public <E extends IEntity> List<E> findList(Class<E> eType, Integer start, Integer limit, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
@@ -512,7 +534,7 @@ public class Repo {
      * @param page 当前第几页. >=1
      * @param pageSize 每页大小 >=1
      * @param <E>
-     * @return {@link Page<E>}
+     * @return 一页实体 {@link Page<E>}
      */
     public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize) {
         return findPage(eType, page, pageSize, null);
@@ -525,7 +547,7 @@ public class Repo {
      * @param page 当前第几页. >=1
      * @param pageSize 每页大小 >=1
      * @param spec 条件
-     * @return {@link Page<E>}
+     * @return 一页实体 {@link Page<E>}
      */
     public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
@@ -548,7 +570,7 @@ public class Repo {
      * 统计某张表总数
      * @param eType 实体类型
      * @param <E>
-     * @return
+     * @return 条数
      */
     public <E extends IEntity> long count(Class<E> eType) { return count(eType, null); }
 
@@ -557,7 +579,7 @@ public class Repo {
      * 根据实体类, 统计
      * @param eType 实体类型
      * @param spec 条件
-     * @return
+     * @return 条数
      */
     public <E extends IEntity> long count(Class<E> eType, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
