@@ -10,6 +10,7 @@ import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.query.Query;
+import org.hibernate.query.QueryParameter;
 import org.hibernate.query.internal.NativeQueryImpl;
 import org.hibernate.query.spi.NativeQueryImplementor;
 import org.hibernate.service.UnknownUnwrapTypeException;
@@ -179,7 +180,7 @@ public class Repo {
     /**
      * {@link #trans(Function, Runnable, Consumer)}
      * @param fn 数据库操作函数. 事务
-     * @param <T>
+     * @param <T> 类型
      * @return {@link T}
      */
     public <T> T trans(Function<Session, T> fn) { return trans(fn, null, null); }
@@ -226,7 +227,7 @@ public class Repo {
 
     /**
      * 保存/更新实体
-     * @param entity
+     * @param entity 实体
      * @return 实体{@link E}
      */
     public <E extends IEntity> E saveOrUpdate(E entity) {
@@ -278,7 +279,7 @@ public class Repo {
     /**
      * 删实体
      * @param entity 实体对象
-     * @param <E>
+     * @param <E> {@link IEntity}
      */
     public <E extends IEntity> void delete(E entity) {
         if (entity == null) throw new IllegalArgumentException("Param entity required");
@@ -317,20 +318,14 @@ public class Repo {
      * @param sql sql 语句
      * @param wrap 返回结果包装的类型
      * @param params 参数
-     * @param <R>
+     * @param <R> 包装类型
      * @return 一条记录 {@link R}
      */
     public <R> R firstRow(String sql, Class<R> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
         return (R) trans(session -> {
-            NativeQueryImplementor query = session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap));
-            if (params != null && params.length > 0) {
-                for (int i = 0; i < params.length; i++) {
-                    query.setParameter(i+1, params[i]);
-                }
-            }
-            List ls = query.setMaxResults(1).list();
+            List ls = fillSqlParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap)), params).setMaxResults(1).list();
             return ls == null || ls.isEmpty() ? null : ls.get(0);
         });
     }
@@ -356,15 +351,7 @@ public class Repo {
     public <R> List<R> rows(String sql, Class<R> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
-        return trans(session -> {
-            NativeQueryImplementor query = session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap));
-            if (params != null && params.length > 0) {
-                for (int i = 0; i < params.length; i++) {
-                    query.setParameter(i+1, params[i]);
-                }
-            }
-            return query.list();
-        });
+        return trans(session -> fillSqlParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap)), params).list());
     }
 
 
@@ -388,7 +375,7 @@ public class Repo {
      * @param pageSize 每页大小 >=1
      * @param wrap 结果包装类型
      * @param params sql参数
-     * @param <T>
+     * @param <T> 包装类型
      * @return 一页记录 {@link Page<T>}
      */
     public <T> Page<T> sqlPage(String sql, Integer page, Integer pageSize, Class<T> wrap, Object...params) {
@@ -398,23 +385,45 @@ public class Repo {
         if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
         return trans(session -> {
             // 当前页数据查询
-            NativeQueryImplementor listQuery = session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap));
-            if (params != null && params.length > 0) {
-                for (int i = 0; i < params.length; i++) {
-                    listQuery.setParameter(i+1, params[i]);
-                }
-            }
+            NativeQueryImplementor listQuery = fillSqlParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap)), params);
             // 总条数查询
-            NativeQueryImplementor countQuery = session.createNativeQuery("select count(1) from (" + sql + ") t1").unwrap(NativeQueryImpl.class);
-            if (params != null && params.length > 0) {
-                for (int i = 0; i < params.length; i++) {
-                    countQuery.setParameter(i+1, params[i]);
-                }
-            }
+            NativeQueryImplementor countQuery = fillSqlParam(session.createNativeQuery("select count(1) from (" + sql + ") t1").unwrap(NativeQueryImpl.class), params);
             return new Page<>().setPage(page).setPageSize(pageSize)
                     .setList(listQuery.setFirstResult((page - 1) * pageSize).setMaxResults(pageSize).list())
                     .setTotalRow(((Number) countQuery.setMaxResults(1).getSingleResult()).longValue());
         });
+    }
+
+
+    /**
+     * sql 参数装配
+     * 1. 位置参数 例 ?
+     * 2. 命名参数 例 :name
+     * @param query NativeQueryImplementor
+     * @param params sql参数
+     */
+    protected NativeQueryImplementor fillSqlParam(NativeQueryImplementor query, Object[] params) {
+        if (params == null || params.length < 1) return query;
+        List<QueryParameter> nps = new ArrayList<>(query.getParameterMetadata().getNamedParameters());
+        if (nps.size() > 0) { //命名参数sql
+            Collections.sort(nps, Comparator.comparingInt(o -> o.getSourceLocations()[0]));
+            for (int i = 0, length = Math.min(params.length, nps.size()); i < length; i++) {
+                Object v = params[i];
+                if (v == null) continue;
+                if (v instanceof Collection) query.setParameterList(nps.get(i).getName(), (Collection) v);
+                else if (v.getClass().isArray()) query.setParameterList(nps.get(i).getName(), (Object[]) v);
+                else query.setParameter(nps.get(i).getName(), v);
+            }
+        } else { //位置参数sql
+            for (int i = 0; i < params.length; i++) {
+                Object v = params[i];
+                if (v == null) continue;
+                if (v instanceof Collection) query.setParameterList(i+1, (Collection) v);
+                else if (v.getClass().isArray()) query.setParameterList(i+1, (Object[]) v);
+                else query.setParameter(i+1, v);
+            }
+        }
+        return query;
     }
 
 
@@ -533,7 +542,7 @@ public class Repo {
      * @param eType 实体类型
      * @param page 当前第几页. >=1
      * @param pageSize 每页大小 >=1
-     * @param <E>
+     * @param <E> {@link IEntity}
      * @return 一页实体 {@link Page<E>}
      */
     public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize) {
@@ -569,7 +578,7 @@ public class Repo {
     /**
      * 统计某张表总数
      * @param eType 实体类型
-     * @param <E>
+     * @param <E> {@link IEntity}
      * @return 条数
      */
     public <E extends IEntity> long count(Class<E> eType) { return count(eType, null); }

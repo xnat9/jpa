@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,6 +89,17 @@ public class JpaTest {
     void testSqlPage() {
         Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
         log.info(repo.sqlPage("select * from db where Db=?", 1, 10, Db.class, "sys").toString());
+        repo.close();
+    }
+
+
+    @Test
+    void testSqlIn() {
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
+        log.info(repo.rows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys")).toString());
+//        log.info(repo.rows("select * from db where Db in (:ids)",  Arrays.asList("sys", "xx")).toString());
+//         log.info(repo.rows("select * from db where Db in (?)", Arrays.asList("sys")).toString());
+//        log.info(repo.rows("select * from db where Db = ?", "sys").toString());
         repo.close();
     }
 }

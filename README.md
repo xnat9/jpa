@@ -76,6 +76,8 @@ List<Map<String, Object>> results = repo.rows("select * from db limit ?", 10);
 List<Db> results = repo.rows("select * from db where Db=?", Db.class, "sys");
 // 3. 分页查询
 Page<Db> pageData = repo.sqlPage("select * from db where Db=?", 1, 10, Db.class, "sys");
+// 4. 命名参数
+List<Map<String, Object>> results = repo.rows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys"));
 ```
 
 ### 自定义操作
