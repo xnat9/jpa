@@ -44,10 +44,21 @@ public class Page<E> {
     /**
      * 转换
      * @param fn
-     * @return
+     * @return Page
      */
     public static <T, E> Page<T> of(Page<E> p1, Function<E, T> fn) {
         return new Page<T>().setPage(p1.page).setPageSize(p1.pageSize).setTotalRow(p1.totalRow).setList(p1.list.stream().map(e -> fn.apply(e)).collect(Collectors.toList()));
+    }
+
+
+    /**
+     * 转换
+     * @param fn 转换函数
+     * @param <T> 转换类型
+     * @return Page
+     */
+    public <T> Page<T> to(Function<E, T> fn) {
+        return new Page<T>().setPage(page).setPageSize(pageSize).setTotalRow(totalRow).setList(list.stream().map(e -> fn.apply(e)).collect(Collectors.toList()));
     }
 
 

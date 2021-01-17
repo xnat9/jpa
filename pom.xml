@@ -7,7 +7,7 @@
     <groupId>cn.xnatural.jpa</groupId>
     <artifactId>jpa</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 
     <url>https://gitee.com/xnat/jpa</url>
 
@@ -15,7 +15,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.25</version>
+            <version>1.7.30</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
