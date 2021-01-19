@@ -80,6 +80,16 @@ Page<Db> pageData = repo.sqlPage("select * from db where Db=?", 1, 10, Db.class,
 List<Map<String, Object>> results = repo.rows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys"));
 ```
 
+#### 更新,插入,删除
+```
+1. 更新
+repo.execute("update test set age=? where id=?", 11, "4028b881766f3e5801766f3e87ba0000")
+2. 插入
+repo.execute("insert into test values(?,?,?,?,?)", UUID.randomUUID().toString().replace("-", ""), new Date(), new Date(), 22, "name")
+3. 删除
+repo.execute("delete from test where id=?", "ad3e4ff8f3fd4171aeeb9dd2c0aa6f0c")
+```
+
 ### 自定义操作
 ```
 // 1. 其它自定义查询

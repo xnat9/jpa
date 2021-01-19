@@ -4,9 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class JpaTest {
 
@@ -100,6 +98,32 @@ public class JpaTest {
 //        log.info(repo.rows("select * from db where Db in (:ids)",  Arrays.asList("sys", "xx")).toString());
 //         log.info(repo.rows("select * from db where Db in (?)", Arrays.asList("sys")).toString());
 //        log.info(repo.rows("select * from db where Db = ?", "sys").toString());
+        repo.close();
+    }
+
+
+    @Test
+    void testUpdate() {
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root").init();
+        log.info(repo.execute("update test set age=? where id=?", 11, "4028b881766f3e5801766f3e87ba0000") + "");
+        repo.close();
+    }
+
+
+    @Test
+    void testInsert() {
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root").init();
+        log.info(repo.execute("insert into test values(?,?,?,?,?)",
+                UUID.randomUUID().toString().replace("-", ""), new Date(), new Date(), 22, "name"
+                ) + "");
+        repo.close();
+    }
+
+
+    @Test
+    void testDelete() {
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root").init();
+        log.info(repo.execute("delete from test where id=?", "ad3e4ff8f3fd4171aeeb9dd2c0aa6f0c") + "");
         repo.close();
     }
 }

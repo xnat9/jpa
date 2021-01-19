@@ -305,6 +305,18 @@ public class Repo {
 
 
     /**
+     * sql update delete insert 执行
+     * @param sql sql语句
+     * @param params 参数
+     * @return 影响条数
+     */
+    public int execute(String sql, Object...params) {
+        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
+        return trans(session -> fillSqlParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class), params).executeUpdate());
+    }
+
+
+    /**
      * sql 查询 一行数据
      * @param sql sql 语句
      * @param params 参数
@@ -674,6 +686,7 @@ public class Repo {
                 // com.alibaba.druid.filter.stat.StatFilter
                 props.put("connectionProperties", "druid.stat.logSlowSql=true;druid.stat.slowSqlMillis=5000");
             }
+            if (!props.containsKey(""))
             ds = (DataSource) Class.forName("com.alibaba.druid.pool.DruidDataSourceFactory").getMethod("createDataSource", Map.class).invoke(null, props);
         }
         catch(ClassNotFoundException ex) {}
