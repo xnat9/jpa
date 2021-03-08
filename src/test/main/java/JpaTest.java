@@ -1,10 +1,12 @@
 import cn.xnatural.jpa.Repo;
 import entity.Db;
+import entity.TestUUIDEntity;
 import entity.User;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class JpaTest {
@@ -12,8 +14,9 @@ public class JpaTest {
     protected static final Logger log = LoggerFactory.getLogger(JpaTest.class);
 
     public static void main(String[] args) {
+        System.out.println(UUID.randomUUID().toString().length());
         Map<String, Object> attrs = new HashMap<>();
-        attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root");
+        attrs.put("url", "jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root");
         attrs.put("hibernate.hbm2ddl.auto", "update"); //update: 自动根据实体更新表结构, none: 不更新
         Repo repo = new Repo(attrs).entities(Db.class).init();
         repo.close();
@@ -32,6 +35,19 @@ public class JpaTest {
     void testGetJdbcUrl() {
         Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
         log.info(repo.getJdbcUrl());
+        repo.close();
+    }
+
+
+    @Test
+    void testUUID() {
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("url", "jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root");
+        attrs.put("hibernate.hbm2ddl.auto", "update"); //update: 自动根据实体更新表结构, none: 不更新
+        Repo repo = new Repo(attrs).entities(TestUUIDEntity.class).init();
+        TestUUIDEntity entity = new TestUUIDEntity();
+        entity.setName(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+        repo.saveOrUpdate(entity);
         repo.close();
     }
 

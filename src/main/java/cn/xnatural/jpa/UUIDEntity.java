@@ -2,6 +2,7 @@ package cn.xnatural.jpa;
 
 import org.hibernate.annotations.GenericGenerator;
 
+import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
@@ -14,7 +15,8 @@ import javax.persistence.MappedSuperclass;
 public class UUIDEntity extends BaseEntity {
     @Id
     @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "org.hibernate.id.UUIDHexGenerator")
+    @GenericGenerator(name = "uuid", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(length = 50)
     private String id;
 
 
