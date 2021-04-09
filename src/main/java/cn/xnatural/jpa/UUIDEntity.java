@@ -15,8 +15,8 @@ import javax.persistence.MappedSuperclass;
 public class UUIDEntity extends BaseEntity {
     @Id
     @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(length = 50)
+    @GenericGenerator(name = "uuid", strategy = "cn.xnatural.jpa.UUIDGenerator")
+    @Column(length = 36)
     private String id;
 
 

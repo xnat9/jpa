@@ -15,6 +15,7 @@ public class JpaTest {
 
     public static void main(String[] args) {
         System.out.println(UUID.randomUUID().toString().length());
+        if (true) return;
         Map<String, Object> attrs = new HashMap<>();
         attrs.put("url", "jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root");
         attrs.put("hibernate.hbm2ddl.auto", "update"); //update: 自动根据实体更新表结构, none: 不更新
@@ -48,6 +49,7 @@ public class JpaTest {
         TestUUIDEntity entity = new TestUUIDEntity();
         entity.setName(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         repo.saveOrUpdate(entity);
+        System.out.println(entity.getId());
         repo.close();
     }
 
