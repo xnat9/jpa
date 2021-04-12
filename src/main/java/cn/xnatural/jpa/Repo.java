@@ -63,7 +63,7 @@ public class Repo {
 
     /**
      * 连接url
-     * @param url
+     * @param url jdbc url
      */
     public Repo(String url) {
         this.attrs = new ConcurrentHashMap<>();

@@ -6,7 +6,7 @@ jpa: 封装hibernate
 <dependency>
     <groupId>cn.xnatural.jpa</groupId>
     <artifactId>jpa</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 </dependency>
 ```
 

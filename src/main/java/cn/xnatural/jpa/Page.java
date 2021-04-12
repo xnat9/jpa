@@ -34,7 +34,6 @@ public class Page<E> {
 
     /**
      * 创建一个空的{@link Page}
-     * @return
      */
     public static Page empty() {
         return new Page().setPage(1).setPageSize(1).setTotalRow(0L).setList(Collections.emptyList());
@@ -43,8 +42,8 @@ public class Page<E> {
 
     /**
      * 转换
-     * @param fn
-     * @return Page
+     * @param fn 转换函数
+     * @return Page 新分页对象
      */
     public static <T, E> Page<T> of(Page<E> p1, Function<E, T> fn) {
         return new Page<T>().setPage(p1.page).setPageSize(p1.pageSize).setTotalRow(p1.totalRow).setList(p1.list.stream().map(e -> fn.apply(e)).collect(Collectors.toList()));
@@ -55,7 +54,7 @@ public class Page<E> {
      * 转换
      * @param fn 转换函数
      * @param <T> 转换类型
-     * @return Page
+     * @return Page 转换后的Page
      */
     public <T> Page<T> to(Function<E, T> fn) {
         return new Page<T>().setPage(page).setPageSize(pageSize).setTotalRow(totalRow).setList(list.stream().map(e -> fn.apply(e)).collect(Collectors.toList()));
@@ -65,7 +64,6 @@ public class Page<E> {
     /**
      * 设置总条数, 并计算总页数
      * @param totalRow 总条数
-     * @return
      */
     public Page setTotalRow(Long totalRow) {
         this.totalRow = totalRow;
