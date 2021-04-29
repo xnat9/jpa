@@ -207,6 +207,31 @@ public class Repo {
 
 
     /**
+     * 连接的数据库Dialect
+     * @return Dialect
+     */
+    public String getDialect() {
+        if (sf == null) throw new RuntimeException("Please init first");
+        return ((SessionFactoryImpl) sf).getJdbcServices().getDialect().getClass().getSimpleName();
+    }
+
+
+    /**
+     * 连接的数据库版本
+     * @return 版本
+     */
+    public String getDBVersion() {
+        if (sf == null) throw new RuntimeException("Please init first");
+        String dialect = getDialect();
+        if (dialect == null) return null;
+        if (dialect.toLowerCase().contains("mysql")) {
+            return firstRow("select version() as v").get("v").toString();
+        }
+        return null;
+    }
+
+
+    /**
      * 连接 jdbcUrl
      * @return 连接 jdbcUrl
      */
@@ -332,7 +357,7 @@ public class Repo {
      * @param params 参数
      * @return 一条记录 {@link Map}
      */
-    public Map firstRow(String sql, Object...params) { return firstRow(sql, Map.class, params); }
+    public Map<String, Object> firstRow(String sql, Object...params) { return firstRow(sql, Map.class, params); }
 
 
     /**

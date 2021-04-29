@@ -33,6 +33,22 @@ public class JpaTest {
 
 
     @Test
+    void testGetDialect() {
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
+        log.info(repo.getDialect());
+        repo.close();
+    }
+
+
+    @Test
+    void testGetDBVersion() {
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
+        log.info(repo.getDBVersion());
+        repo.close();
+    }
+
+
+    @Test
     void testGetJdbcUrl() {
         Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
         log.info(repo.getJdbcUrl());
@@ -49,7 +65,7 @@ public class JpaTest {
         TestUUIDEntity entity = new TestUUIDEntity();
         entity.setName(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         repo.saveOrUpdate(entity);
-        System.out.println(entity.getId());
+        log.info(entity.getId());
         repo.close();
     }
 
