@@ -2,6 +2,7 @@ package cn.xnatural.jpa;
 
 import org.hibernate.annotations.DynamicUpdate;
 
+import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import java.util.Date;
 
@@ -14,6 +15,7 @@ public class BaseEntity implements IEntity {
     /**
      * 创建时间
      */
+    @Column(nullable = false)
     private Date createTime;
     /**
      * 更新时间
