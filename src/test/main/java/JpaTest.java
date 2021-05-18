@@ -42,7 +42,8 @@ public class JpaTest {
 
     @Test
     void testGetDBVersion() {
-        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init();
+        // Repo repo = new Repo("jdbc:h2:d:/tmp/h2/data;user=root;password=root").init();
         log.info(repo.getDBVersion());
         repo.close();
     }

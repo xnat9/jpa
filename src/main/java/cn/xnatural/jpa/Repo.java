@@ -224,8 +224,11 @@ public class Repo {
         if (sf == null) throw new RuntimeException("Please init first");
         String dialect = getDialect();
         if (dialect == null) return null;
-        if (dialect.toLowerCase().contains("mysql")) {
-            return firstRow("select version() as v").get("v").toString();
+        dialect = dialect.toLowerCase();
+        if (dialect.contains("mysql") || dialect.contains("maria")) {
+            return firstRow("select version()").entrySet().iterator().next().getValue().toString();
+        } else if (dialect.contains("h2")) {
+            return firstRow("select H2VERSION()").entrySet().iterator().next().getValue().toString();
         }
         return null;
     }

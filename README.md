@@ -11,13 +11,13 @@ jpa: 封装hibernate
 ```
 
 ## 用法
-### 创建
+### 创建一个Repo
 ```java
-// 根据jdbcUrl 创建
+//1. 根据jdbcUrl 创建
 Repo repo = new Repo("jdbc:mysql://localhost:3306/test?user=root&password=root").init();
 ```
 ```java
-// 根据属性集创建
+//2. 根据属性集创建
 Map<String, Object> attrs = new HashMap<>();
 attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/test?user=root&password=root");
 attrs.put("hibernate.hbm2ddl.auto", "update"); //update: 自动根据实体更新表结构, none: 不更新
@@ -25,12 +25,38 @@ Repo repo = new Repo(attrs).entities(Db.class).init();
 ```
 ### 实体查询
 ```java
+/**
+ * 自定义 实体
+ */
 @Entity
 @Table(name = "Db")
 public class Db implements IEntity {
     @Id
     public String Db;
     public String Host;
+}
+```
+
+```java
+import cn.xnatural.jpa.UUIDEntity;
+/**
+ * 无符号 '-' uuid实体 
+ */
+@Entity
+public class Test1 extends UUIDEntity {
+    public String name;
+}
+```
+
+```java
+import cn.xnatural.jpa.LongIdEntity;
+
+/**
+ * 自增长 long id 实体
+ */
+@Entity
+public class Test2 extends LongIdEntity {
+    public String name;
 }
 ```
 #### 查询一个实体
@@ -82,11 +108,11 @@ List<Map<String, Object>> results = repo.rows("select * from db where Db = :db a
 
 #### 更新,插入,删除
 ```java
-1. 更新
+// 1. 更新
 repo.execute("update test set age=? where id=?", 11, "4028b881766f3e5801766f3e87ba0000")
-2. 插入
+// 2. 插入
 repo.execute("insert into test values(?,?,?,?,?)", UUID.randomUUID().toString().replace("-", ""), new Date(), new Date(), 22, "name")
-3. 删除
+// 3. 删除
 repo.execute("delete from test where id=?", "ad3e4ff8f3fd4171aeeb9dd2c0aa6f0c")
 ```
 
@@ -110,7 +136,7 @@ repo.trans(session -> {
 })
 ```
 
-### 其它方法
+### 其它实用方法
 ```java
 // 查询实体映射的表名
 repo.tbName(实体Class);
@@ -118,6 +144,8 @@ repo.tbName(实体Class);
 repo.getJdbcUrl();
 // 得到当前连接的数据库名(mysql)
 repo.getDbName();
+// 得到当前数据库的版本信息
+repo.getDBVersion();
 ```
 
 ## 参与贡献
