@@ -39,7 +39,7 @@ import java.util.function.Function;
 /**
  * 对应一个数据源
  */
-public class Repo {
+public class Repo implements AutoCloseable {
     protected static final Logger       log = LoggerFactory.getLogger(Repo.class);
     /**
      * 属性集: 包含 datasource, hibernate 两部分
@@ -118,6 +118,7 @@ public class Repo {
     /**
      * 关闭Repo
      */
+    @Override
     public void close() {
         try {
             sf.close(); sf = null;
