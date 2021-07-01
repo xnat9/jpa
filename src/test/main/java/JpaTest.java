@@ -26,7 +26,7 @@ public class JpaTest {
 
     @Test
     void testGetDbName() {
-        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root").init();
+        Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=roo&allowPublicKeyRetrieval=true").init();
         log.info(repo.getDbName());
         repo.close();
     }
