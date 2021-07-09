@@ -63,11 +63,11 @@ public class Repo implements AutoCloseable {
 
     /**
      * 连接url
-     * @param url jdbc url
+     * @param jdbcUrl jdbc url
      */
-    public Repo(String url) {
+    public Repo(String jdbcUrl) {
         this.attrs = new ConcurrentHashMap<>();
-        attrs.put("url", url); attrs.put("jdbcUrl", url);
+        attrs.put("url", jdbcUrl); attrs.put("jdbcUrl", jdbcUrl);
     }
 
     /**
@@ -85,6 +85,15 @@ public class Repo implements AutoCloseable {
         attrs.put("maxActive", maxActive); attrs.put("maximumPoolSize", maxActive);
         attrs.put("username", username); attrs.put("password", password);
     }
+
+    /**
+     * {@link #Repo(String, String, String, Integer, Integer)}
+     * @param jdbcUrl jdbc连接串
+     * @param username 用户名
+     * @param password 密码
+     */
+    public Repo(String jdbcUrl, String username, String password) { this(jdbcUrl, username, password, 1, 8); }
+
 
     /**
      * 根据属性集创建Repo
@@ -148,7 +157,6 @@ public class Repo implements AutoCloseable {
      * @param fn 数据库操作函数
      * @param okFn 执行成功后回调
      * @param failFn 执行失败后回调
-     * @return {@link T}
      */
     public <T> T trans(Function<Session, T> fn, Runnable okFn, Consumer<Exception> failFn) {
         if (sf == null) throw new RuntimeException("Please init first");
@@ -181,7 +189,6 @@ public class Repo implements AutoCloseable {
      * {@link #trans(Function, Runnable, Consumer)}
      * @param fn 数据库操作函数. 事务
      * @param <T> 类型
-     * @return {@link T}
      */
     public <T> T trans(Function<Session, T> fn) { return trans(fn, null, null); }
 
@@ -342,9 +349,6 @@ public class Repo implements AutoCloseable {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
         return trans(session -> fillParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class), params).executeUpdate());
     }
-
-
-//    public Map hqlFirstRow(String hql, Object...params) { return hqlFirstRow(hql, Map.class, params); }
 
 
     public <R> R hqlFirstRow(String hql, Class<R> wrap,  Object...params) {
