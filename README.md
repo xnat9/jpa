@@ -18,7 +18,7 @@ Repo repo = new Repo("jdbc:mysql://localhost:3306/test?user=root&password=root")
 ```
 ```java
 //2. 自定义添加属性
-Repo repo = new Repo("jdbc:mysql://localhost:3306/test?user=root&password=root")
+Repo repo = new Repo("jdbc:mysql://localhost:3306/test", "root", "root", 0, 5)
         .setAttr("hibernate.hbm2ddl.auto", "update")
         .entities(Db.class).init();
 ```
