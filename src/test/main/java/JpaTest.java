@@ -14,13 +14,16 @@ public class JpaTest {
     protected static final Logger log = LoggerFactory.getLogger(JpaTest.class);
 
     public static void main(String[] args) {
-        System.out.println(UUID.randomUUID().toString().length());
-        if (true) return;
-        Map<String, Object> attrs = new HashMap<>();
-        attrs.put("url", "jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root");
-        attrs.put("hibernate.hbm2ddl.auto", "update"); //update: 自动根据实体更新表结构, none: 不更新
-        Repo repo = new Repo(attrs).entities(Db.class).init();
-        repo.close();
+
+    }
+
+
+    @Test
+    void testCreate() {
+        try(Repo repo = new Repo("jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root")
+                .setAttr("hibernate.hbm2ddl.auto", "update")
+                .entities(Db.class).init()) {
+        }
     }
 
 

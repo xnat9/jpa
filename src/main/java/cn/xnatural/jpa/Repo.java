@@ -138,6 +138,23 @@ public class Repo implements AutoCloseable {
 
 
     /**
+     * 设置 属性
+     * @param key 属性key
+     * @param value 属性值
+     * @return {@link Repo}
+     */
+    public Repo setAttr(String key, Object value) { attrs.put(key, value); return this; }
+
+
+    /**
+     * 获取属性
+     * @param key 属性key
+     * @return 属性值
+     */
+    public Object getAttr(String key) { return attrs.get(key); }
+
+
+    /**
      * 添加被管理的实体类
      * @param clzs 实体类
      * @return 当前 {@link Repo}

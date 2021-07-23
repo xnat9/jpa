@@ -17,7 +17,13 @@ jpa: 封装hibernate
 Repo repo = new Repo("jdbc:mysql://localhost:3306/test?user=root&password=root").init();
 ```
 ```java
-//2. 根据属性集创建
+//2. 自定义添加属性
+Repo repo = new Repo("jdbc:mysql://localhost:3306/test?user=root&password=root")
+        .setAttr("hibernate.hbm2ddl.auto", "update")
+        .entities(Db.class).init();
+```
+```java
+//3. 根据属性集创建
 Map<String, Object> attrs = new HashMap<>();
 attrs.put("jdbcUrl", "jdbc:mysql://localhost:3306/test?user=root&password=root");
 attrs.put("hibernate.hbm2ddl.auto", "update"); //update: 自动根据实体更新表结构, none: 不更新
