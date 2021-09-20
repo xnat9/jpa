@@ -159,7 +159,7 @@ public class Repo implements AutoCloseable {
      * @param clzs 实体类
      * @return 当前 {@link Repo}
      */
-    public Repo entities(Class... clzs) {
+    public Repo entities(Class<? extends IEntity>... clzs) {
         if (sf != null) throw new RuntimeException("Already inited");
         if (clzs == null) return this;
         for (Class clz : clzs) { entities.add(clz); }
@@ -215,7 +215,7 @@ public class Repo implements AutoCloseable {
      * @param eType 实体Class
      * @return 表名
      */
-    public String tbName(Class<IEntity> eType) {
+    public String tbName(Class<? extends IEntity> eType) {
         if (sf == null) throw new RuntimeException("Please init first");
         return ((AbstractEntityPersister) ((MetamodelImplementor) sf.getMetamodel()).locateEntityPersister(eType)).getRootTableName().replace("`", "");
     }
