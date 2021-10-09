@@ -368,11 +368,31 @@ public class Repo implements AutoCloseable {
     }
 
 
+    /**
+     * hql 查询单条记录
+     * @param hql hql
+     * @param wrap 返回类型class
+     * @param params 参数列表
+     * @param <R> 类型
+     */
     public <R> R hqlFirstRow(String hql, Class<R> wrap,  Object...params) {
         return (R) trans(session -> {
             List ls = fillParam(session.createQuery(hql, wrap), params).list();
             return ls == null || ls.isEmpty() ? null : ls.get(0);
         });
+    }
+
+
+    /**
+     * hql 查询多条记录
+     * @param hql hql
+     * @param wrap 返回的类型
+     * @param params 参数
+     * @param <R> 类型
+     * @return 列表
+     */
+    public <R> List<R> hqlRows(String hql, Class<R> wrap,  Object...params) {
+        return trans(session -> fillParam(session.createQuery(hql, wrap), params).list());
     }
 
 

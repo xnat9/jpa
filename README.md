@@ -89,6 +89,33 @@ repo.findList(实体Class, 条件)
 repo.count(实体Class, 条件(可选))
 ```
 
+### hql查询
+#### 查询单个值
+```java
+Long count = repo.hqlFirstRow("select count(1) as total from Db", Long.class);
+```
+#### 查询一条记录
+```java
+Map record = repo.hqlFirstRow("select new map(Host as host,User as user) from User where User=:user", Map.class, "root");
+```
+#### 查询一个实体
+```java
+User record = repo.hqlFirstRow("select new entity.User(Host,User) from User where User=:user", User.class, "root");
+```
+
+#### 查询多个单值
+```java
+List<Long> ls = repo.hqlRows("select count(1) as total from Db", Long.class);
+```
+#### 查询多条记录
+```java
+List<Map> records = repo.hqlRows("select new map(Host as host,User as user) from User where User=:user", Map.class, "root");
+```
+#### 查询多个实体
+```java
+List<User> users = repo.hqlRows("select new entity.User(Host,User) from User where User=:user", User.class, "root");
+```
+
 ### 原生sql操作
 #### 查询一条数据
 ```java
@@ -108,7 +135,7 @@ List<Map<String, Object>> results = repo.rows("select * from db limit ?", 10);
 List<Db> results = repo.rows("select * from db where Db=?", Db.class, "sys");
 // 3. 分页查询
 Page<Db> pageData = repo.sqlPage("select * from db where Db=?", 1, 10, Db.class, "sys");
-// 4. 命名参数
+// 4. 命名参数(in条件查询)
 List<Map<String, Object>> results = repo.rows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys"));
 ```
 

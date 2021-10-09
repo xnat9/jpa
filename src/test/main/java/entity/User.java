@@ -13,6 +13,13 @@ public class User implements IEntity {
     public String Host;
     private String User;
 
+    public User() { }
+
+    public User(String host, String user) {
+        Host = host;
+        User = user;
+    }
+
     public String getUser() {
         return User;
     }
@@ -24,8 +31,8 @@ public class User implements IEntity {
 
     @Override
     public String toString() {
-        return "Db@" + Integer.toHexString(hashCode()) +
-                ", Host='" + Host + '\'' +
+        return "User@" + Integer.toHexString(hashCode()) +
+                "{Host='" + Host + '\'' +
                 ", User='" + User + '\'' +
                 '}';
     }
