@@ -17,5 +17,5 @@ public interface CriteriaSpec<E> {
      * @param cb CriteriaBuilder
      * @return E
      */
-    E toPredicate(Root<E> root, CriteriaQuery<?> query, CriteriaBuilder cb);
+    Object toPredicate(Root<E> root, CriteriaQuery<?> query, CriteriaBuilder cb);
 }

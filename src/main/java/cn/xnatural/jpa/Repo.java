@@ -56,7 +56,7 @@ public class Repo implements AutoCloseable {
     /**
      * 关联哪些实体
      */
-    protected final List<Class>         entities = new LinkedList<>();
+    protected final List<Class<? extends IEntity>>         entities = new LinkedList<>();
 
 
     public Repo() { this((Map<String, Object>) null); }
@@ -586,7 +586,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 多个实体 {@link List<E>}
      */
-    public <E extends IEntity> List<E> findList(Class<E> eType, CriteriaSpec spec) {
+    public <E extends IEntity> List<E> findList(Class<E> eType, CriteriaSpec<E> spec) {
         return findList(eType, null, null, spec);
     }
 
@@ -611,7 +611,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 多个实体 {@link List<E>}
      */
-    public <E extends IEntity> List<E> findList(Class<E> eType, Integer start, Integer limit, CriteriaSpec spec) {
+    public <E extends IEntity> List<E> findList(Class<E> eType, Integer start, Integer limit, CriteriaSpec<E> spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         if (start != null && start < 0) throw new IllegalArgumentException("Param start >= 0 or not give");
         if (limit != null && limit <= 0) throw new IllegalArgumentException("Param limit must > 0 or not give");
@@ -650,7 +650,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 一页实体 {@link Page<E>}
      */
-    public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec spec) {
+    public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec<E> spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
         if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
@@ -682,7 +682,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 条数
      */
-    public <E extends IEntity> long count(Class<E> eType, CriteriaSpec spec) {
+    public <E extends IEntity> long count(Class<E> eType, CriteriaSpec<E> spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();
@@ -712,7 +712,7 @@ public class Repo implements AutoCloseable {
      * @param entities 实体类
      * @return {@link SessionFactory}
      */
-    public static SessionFactory createSessionFactory(DataSource datasource, Map props, List<Class> entities) {
+    public static SessionFactory createSessionFactory(DataSource datasource, Map props, List<Class<? extends IEntity>> entities) {
         props = props == null ? new HashMap<>() : props;
         props.putIfAbsent("hibernate.current_session_context_class", "thread"); // 会话和 线程绑定
         props.putIfAbsent("hibernate.temp.use_jdbc_metadata_defaults", "true"); // 自动探测连接的数据库信息,该用哪个Dialect
