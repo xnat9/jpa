@@ -35,8 +35,8 @@ public class Page<E> {
     /**
      * 创建一个空的{@link Page}
      */
-    public static Page empty() {
-        return new Page().setPage(1).setPageSize(1).setTotalRow(0L).setList(Collections.emptyList());
+    public static <E> Page<E> empty() {
+        return new Page<E>().setPage(1).setPageSize(1).setTotalRow(0L).setList(Collections.emptyList());
     }
 
 
@@ -65,7 +65,7 @@ public class Page<E> {
      * 设置总条数, 并计算总页数
      * @param totalRow 总条数
      */
-    public Page setTotalRow(Long totalRow) {
+    public Page<E> setTotalRow(Long totalRow) {
         this.totalRow = totalRow;
         if (totalRow != null) {
             this.totalPage = (int) (Math.ceil(totalRow / Double.valueOf(this.pageSize)));
@@ -74,40 +74,30 @@ public class Page<E> {
     }
 
 
-    public Integer getPageSize() {
-        return pageSize;
-    }
+    public Integer getPageSize() { return pageSize; }
 
     public Page<E> setPageSize(Integer pageSize) {
         this.pageSize = pageSize;
         return this;
     }
 
-    public Long getTotalRow() {
-        return totalRow;
-    }
+    public Long getTotalRow() { return totalRow; }
 
-    public Integer getTotalPage() {
-        return totalPage;
-    }
+    public Integer getTotalPage() { return totalPage; }
 
     public Page<E> setTotalPage(Integer totalPage) {
         this.totalPage = totalPage;
         return this;
     }
 
-    public Collection<E> getList() {
-        return list;
-    }
+    public Collection<E> getList() { return list; }
 
     public Page<E> setList(Collection<E> list) {
         this.list = list;
         return this;
     }
 
-    public Integer getPage() {
-        return page;
-    }
+    public Integer getPage() { return page; }
 
     public Page<E> setPage(Integer page) {
         this.page = page;
