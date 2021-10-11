@@ -300,7 +300,7 @@ public class Repo implements AutoCloseable {
      * 根据id查找实体
      * @param eType 实体类型
      * @param id id
-     * @return 实体{@link E}
+     * @return 实体 {@link E}
      */
     public <E extends IEntity> E findById(Class<E> eType, Serializable id) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
@@ -438,7 +438,7 @@ public class Repo implements AutoCloseable {
      * @param wrap 返回结果包装的类型
      * @param params sql参数
      * @param <R> 包装类型
-     * @return 多条记录 {@link List<R>}
+     * @return 多条记录 {@link List<R> }
      */
     public <R> List<R> rows(String sql, Class<R> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
@@ -468,7 +468,7 @@ public class Repo implements AutoCloseable {
      * @param wrap 结果包装类型
      * @param params sql参数
      * @param <T> 包装类型
-     * @return 一页记录 {@link Page<T>}
+     * @return 一页记录 {@link Page<T> }
      */
     public <T> Page<T> sqlPage(String sql, Integer page, Integer pageSize, Class<T> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
