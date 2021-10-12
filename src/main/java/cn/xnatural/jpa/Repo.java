@@ -314,7 +314,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 实体{@link E}
      */
-    public <E extends IEntity> E find(Class<E> eType, CriteriaSpec spec) {
+    public <E extends IEntity> E find(Class<E> eType, CriteriaSpec<E> spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();
