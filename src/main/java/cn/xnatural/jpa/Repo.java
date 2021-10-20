@@ -766,42 +766,41 @@ public class Repo implements AutoCloseable {
                 // com.alibaba.druid.filter.stat.StatFilter
                 props.put("connectionProperties", "druid.stat.logSlowSql=true;druid.stat.slowSqlMillis=5000");
             }
-            if (!props.containsKey(""))
             ds = (DataSource) Class.forName("com.alibaba.druid.pool.DruidDataSourceFactory").getMethod("createDataSource", Map.class).invoke(null, props);
         }
         catch(ClassNotFoundException ex) {}
         catch(Exception ex) { throw new RuntimeException(ex); }
+        if (ds != null) return ds;
 
         // Hikari 数据源
-        if (ds == null) {
-            try {
-                Class<?> clz = Class.forName("com.zaxxer.hikari.HikariDataSource");
-                ds = (DataSource) clz.newInstance();
-                for (PropertyDescriptor pd : Introspector.getBeanInfo(clz).getPropertyDescriptors()) {
-                    Object v = dsAttr.get(pd.getName());
-                    if (v != null) {
-                        if (Integer.class.equals(pd.getPropertyType())  || int.class.equals(pd.getPropertyType())) pd.getWriteMethod().invoke(ds, Integer.valueOf(v.toString()));
-                        else if (Long.class.equals(pd.getPropertyType()) || long.class.equals(pd.getPropertyType())) pd.getWriteMethod().invoke(ds, Long.valueOf(v.toString()));
-                        else if (Boolean.class.equals(pd.getPropertyType()) || boolean.class.equals(pd.getPropertyType())) pd.getWriteMethod().invoke(ds, Boolean.valueOf(v.toString()));
-                        else pd.getWriteMethod().invoke(ds, v);
-                    }
+        try {
+            Class<?> clz = Class.forName("com.zaxxer.hikari.HikariDataSource");
+            ds = (DataSource) clz.newInstance();
+            for (PropertyDescriptor pd : Introspector.getBeanInfo(clz).getPropertyDescriptors()) {
+                Object v = dsAttr.get(pd.getName());
+                if (v != null) {
+                    if (Integer.class.equals(pd.getPropertyType())  || int.class.equals(pd.getPropertyType())) pd.getWriteMethod().invoke(ds, Integer.valueOf(v.toString()));
+                    else if (Long.class.equals(pd.getPropertyType()) || long.class.equals(pd.getPropertyType())) pd.getWriteMethod().invoke(ds, Long.valueOf(v.toString()));
+                    else if (Boolean.class.equals(pd.getPropertyType()) || boolean.class.equals(pd.getPropertyType())) pd.getWriteMethod().invoke(ds, Boolean.valueOf(v.toString()));
+                    else pd.getWriteMethod().invoke(ds, v);
                 }
             }
-            catch(ClassNotFoundException ex) {}
-            catch(Exception ex) { throw new RuntimeException(ex); }
         }
+        catch(ClassNotFoundException ex) {}
+        catch(Exception ex) { throw new RuntimeException(ex); }
+        if (ds != null) return ds;
 
         // dbcp2 数据源
-        if (ds == null) {
-            try {
-                Properties props = new Properties();
-                dsAttr.forEach((s, o) -> props.put(s, Objects.toString(o, "")));
-                // if (!props.containsKey("validationQuery")) props.put("validationQuery", "select 1");
-                ds = (DataSource) Class.forName("org.apache.commons.dbcp2.BasicDataSourceFactory").getMethod("createDataSource", Properties.class).invoke(null, props);
-            }
-            catch(ClassNotFoundException ex) {}
-            catch(Exception ex) { throw new RuntimeException(ex); }
+        try {
+            Properties props = new Properties();
+            dsAttr.forEach((s, o) -> props.put(s, Objects.toString(o, "")));
+            // if (!props.containsKey("validationQuery")) props.put("validationQuery", "select 1");
+            ds = (DataSource) Class.forName("org.apache.commons.dbcp2.BasicDataSourceFactory").getMethod("createDataSource", Properties.class).invoke(null, props);
         }
+        catch(ClassNotFoundException ex) {}
+        catch(Exception ex) { throw new RuntimeException(ex); }
+
+        if (ds == null) throw new RuntimeException("No found DataSource impl class");
         return ds;
     }
 }
