@@ -4,7 +4,7 @@ jpa: 封装hibernate
 ## 安装教程
 ```xml
 <dependency>
-    <groupId>cn.xnatural.jpa</groupId>
+    <groupId>cn.xnatural</groupId>
     <artifactId>jpa</artifactId>
     <version>1.0.7</version>
 </dependency>
