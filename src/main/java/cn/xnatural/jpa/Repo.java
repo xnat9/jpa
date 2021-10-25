@@ -314,7 +314,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 实体{@link E}
      */
-    public <E extends IEntity> E find(Class<E> eType, CriteriaSpec<E> spec) {
+    public <E extends IEntity> E find(Class<E> eType, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();
@@ -586,7 +586,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 多个实体 {@link List<E>}
      */
-    public <E extends IEntity> List<E> findList(Class<E> eType, CriteriaSpec<E> spec) {
+    public <E extends IEntity> List<E> findList(Class<E> eType, CriteriaSpec spec) {
         return findList(eType, null, null, spec);
     }
 
@@ -611,7 +611,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 多个实体 {@link List<E>}
      */
-    public <E extends IEntity> List<E> findList(Class<E> eType, Integer start, Integer limit, CriteriaSpec<E> spec) {
+    public <E extends IEntity> List<E> findList(Class<E> eType, Integer start, Integer limit, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         if (start != null && start < 0) throw new IllegalArgumentException("Param start >= 0 or not give");
         if (limit != null && limit <= 0) throw new IllegalArgumentException("Param limit must > 0 or not give");
@@ -648,9 +648,9 @@ public class Repo implements AutoCloseable {
      * @param page 当前第几页. >=1
      * @param pageSize 每页大小 >=1
      * @param spec 条件
-     * @return 一页实体 {@link Page<E>}
+     * @return 一页实体 {@link Page}
      */
-    public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec<E> spec) {
+    public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
         if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
@@ -682,7 +682,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 条数
      */
-    public <E extends IEntity> long count(Class<E> eType, CriteriaSpec<E> spec) {
+    public <E extends IEntity> long count(Class<E> eType, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();

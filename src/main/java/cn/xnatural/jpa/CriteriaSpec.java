@@ -6,16 +6,14 @@ import javax.persistence.criteria.Root;
 
 /**
  * Criteria 查询 spec
- * @param <E>
  */
 @FunctionalInterface
-public interface CriteriaSpec<E> {
+public interface CriteriaSpec {
     /**
      * 查询条件构建
      * @param root Root
      * @param query CriteriaQuery
      * @param cb CriteriaBuilder
-     * @return E
      */
-    Object toPredicate(Root<E> root, CriteriaQuery<?> query, CriteriaBuilder cb);
+    Object toPredicate(Root<? extends IEntity> root, CriteriaQuery<?> query, CriteriaBuilder cb);
 }
