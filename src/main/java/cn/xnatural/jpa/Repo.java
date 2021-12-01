@@ -251,9 +251,9 @@ public class Repo implements AutoCloseable {
         if (dialect == null) return null;
         dialect = dialect.toLowerCase();
         if (dialect.contains("mysql") || dialect.contains("maria")) {
-            return firstRow("select version()").entrySet().iterator().next().getValue().toString();
+            return row("select version()").entrySet().iterator().next().getValue().toString();
         } else if (dialect.contains("h2")) {
-            return firstRow("select H2VERSION()").entrySet().iterator().next().getValue().toString();
+            return row("select H2VERSION()").entrySet().iterator().next().getValue().toString();
         }
         return null;
     }
@@ -302,7 +302,7 @@ public class Repo implements AutoCloseable {
      * @param id id
      * @return 实体 {@link E}
      */
-    public <E extends IEntity> E findById(Class<E> eType, Serializable id) {
+    public <E extends IEntity> E byId(Class<E> eType, Serializable id) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> session.get(eType, id));
     }
@@ -314,7 +314,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 实体{@link E}
      */
-    public <E extends IEntity> E find(Class<E> eType, CriteriaSpec spec) {
+    public <E extends IEntity> E row(Class<E> eType, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();
@@ -363,7 +363,7 @@ public class Repo implements AutoCloseable {
      * @return 影响条数
      */
     public int execute(String sql, Object...params) {
-        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
+        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql required");
         return trans(session -> fillParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class), params).executeUpdate());
     }
 
@@ -375,7 +375,7 @@ public class Repo implements AutoCloseable {
      * @param params 参数列表
      * @param <R> 类型
      */
-    public <R> R hqlFirstRow(String hql, Class<R> wrap,  Object...params) {
+    public <R> R hqlRow(String hql, Class<R> wrap, Object...params) {
         return (R) trans(session -> {
             List ls = fillParam(session.createQuery(hql, wrap), params).list();
             return ls == null || ls.isEmpty() ? null : ls.get(0);
@@ -397,24 +397,24 @@ public class Repo implements AutoCloseable {
 
 
     /**
-     * sql 查询 一行数据
+     * sql 查询一条数据(返回第一条满足条件的数据)
      * @param sql sql 语句
      * @param params 参数
      * @return 一条记录 {@link Map}
      */
-    public Map<String, Object> firstRow(String sql, Object...params) { return firstRow(sql, Map.class, params); }
+    public Map<String, Object> row(String sql, Object...params) { return row(sql, Map.class, params); }
 
 
     /**
-     * sql 查询 一行数据
+     * sql 查询 一行数据(返回第一条满足条件的数据)
      * @param sql sql 语句
      * @param wrap 返回结果包装的类型
      * @param params 参数
      * @param <R> 包装类型
      * @return 一条记录 {@link R}
      */
-    public <R> R firstRow(String sql, Class<R> wrap, Object...params) {
-        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
+    public <R> R row(String sql, Class<R> wrap, Object...params) {
+        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql required");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
         return (R) trans(session -> {
             List ls = fillParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap)), params).setMaxResults(1).list();
@@ -429,7 +429,7 @@ public class Repo implements AutoCloseable {
      * @param params 参数
      * @return 多条记录 {@link List<Map>}
      */
-    public List<Map> rows(String sql, Object...params) { return rows(sql, Map.class, params); }
+    public List<Map> sqlRows(String sql, Object...params) { return sqlRows(sql, Map.class, params); }
 
 
     /**
@@ -440,8 +440,8 @@ public class Repo implements AutoCloseable {
      * @param <R> 包装类型
      * @return 多条记录 {@link List<R> }
      */
-    public <R> List<R> rows(String sql, Class<R> wrap, Object...params) {
-        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
+    public <R> List<R> sqlRows(String sql, Class<R> wrap, Object...params) {
+        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql required");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
         return trans(session -> fillParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap)), params).list());
     }
@@ -471,7 +471,7 @@ public class Repo implements AutoCloseable {
      * @return 一页记录 {@link Page<T> }
      */
     public <T> Page<T> sqlPage(String sql, Integer page, Integer pageSize, Class<T> wrap, Object...params) {
-        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql not empty");
+        if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql required");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
         if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
         if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
@@ -575,9 +575,7 @@ public class Repo implements AutoCloseable {
      * @param eType 实体类型
      * @return 全部数据 {@link List<E>}
      */
-    public <E extends IEntity> List<E> findAll(Class<E> eType) {
-        return findList(eType, null, null, null);
-    }
+    public <E extends IEntity> List<E> all(Class<E> eType) { return rows(eType, null, null, null); }
 
 
     /**
@@ -586,8 +584,8 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 多个实体 {@link List<E>}
      */
-    public <E extends IEntity> List<E> findList(Class<E> eType, CriteriaSpec spec) {
-        return findList(eType, null, null, spec);
+    public <E extends IEntity> List<E> rows(Class<E> eType, CriteriaSpec spec) {
+        return rows(eType, null, null, spec);
     }
 
 
@@ -598,8 +596,8 @@ public class Repo implements AutoCloseable {
      * @param limit 条数限制
      * @return 多个实体 {@link List<E>}
      */
-    public <E extends IEntity> List<E> findList(Class<E> eType, Integer start, Integer limit) {
-        return findList(eType, start, limit, null);
+    public <E extends IEntity> List<E> rows(Class<E> eType, Integer start, Integer limit) {
+        return rows(eType, start, limit, null);
     }
 
 
@@ -611,7 +609,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 多个实体 {@link List<E>}
      */
-    public <E extends IEntity> List<E> findList(Class<E> eType, Integer start, Integer limit, CriteriaSpec spec) {
+    public <E extends IEntity> List<E> rows(Class<E> eType, Integer start, Integer limit, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         if (start != null && start < 0) throw new IllegalArgumentException("Param start >= 0 or not give");
         if (limit != null && limit <= 0) throw new IllegalArgumentException("Param limit must > 0 or not give");
@@ -637,8 +635,8 @@ public class Repo implements AutoCloseable {
      * @param <E> {@link IEntity}
      * @return 一页实体 {@link Page<E>}
      */
-    public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize) {
-        return findPage(eType, page, pageSize, null);
+    public <E extends IEntity> Page<E> page(Class<E> eType, Integer page, Integer pageSize) {
+        return page(eType, page, pageSize, null);
     }
 
 
@@ -650,7 +648,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 一页实体 {@link Page}
      */
-    public <E extends IEntity> Page<E> findPage(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec spec) {
+    public <E extends IEntity> Page<E> page(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
         if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
@@ -694,6 +692,28 @@ public class Repo implements AutoCloseable {
             query.orderBy(Collections.emptyList());
             if (p instanceof Predicate) query.where((Predicate) p);
             return ((Number) session.createQuery(query).getSingleResult()).longValue();
+        });
+    }
+
+
+    /**
+     * 根据条件查是否存在
+     * @param eType 实体类型
+     * @param spec 条件
+     * @return true: 存在, false: 不存在
+     */
+    public <E extends IEntity> boolean exist(Class<E> eType, CriteriaSpec spec) {
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        return trans(session -> {
+            CriteriaBuilder cb = session.getCriteriaBuilder();
+            CriteriaQuery<Long> query = cb.createQuery(Long.class);
+            Root<E> root = query.from(eType);
+            Object p = spec == null ? null : spec.toPredicate(root, query, cb);
+            if (query.isDistinct()) query.select(cb.countDistinct(root));
+            else query.select(cb.count(root));
+            query.orderBy(Collections.emptyList());
+            if (p instanceof Predicate) query.where((Predicate) p);
+            return session.createQuery(query).setMaxResults(1).getSingleResult() > 0;
         });
     }
 
@@ -765,6 +785,10 @@ public class Repo implements AutoCloseable {
             if (!props.containsKey("connectionProperties")) {
                 // com.alibaba.druid.filter.stat.StatFilter
                 props.put("connectionProperties", "druid.stat.logSlowSql=true;druid.stat.slowSqlMillis=5000");
+            }
+            // 连接过期时间 druid.timeBetweenEvictionRunsMillis=1800000
+            if (!props.containsKey("jpa_rule.druid.timeBetweenEvictionRunsMillis")) {
+                props.put("jpa_rule.druid.timeBetweenEvictionRunsMillis", "1800000");
             }
             ds = (DataSource) Class.forName("com.alibaba.druid.pool.DruidDataSourceFactory").getMethod("createDataSource", Map.class).invoke(null, props);
         }

@@ -77,7 +77,7 @@ public class JpaTest {
     @Test
     void testEntity() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(Db.class).init()) {
-            log.info(repo.find(Db.class, (root, query, cb) -> cb.equal(root.get("Db"), "sys")).Host);
+            log.info(repo.row(Db.class, (root, query, cb) -> cb.equal(root.get("Db"), "sys")).Host);
         }
     }
 
@@ -85,7 +85,7 @@ public class JpaTest {
     @Test
     void testEntityPage() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(Db.class).init()) {
-            log.info(repo.findPage(Db.class, 1, 10, (root, query, cb) -> cb.equal(root.get("Db"), "sys")).toString());
+            log.info(repo.page(Db.class, 1, 10, (root, query, cb) -> cb.equal(root.get("Db"), "sys")).toString());
         }
     }
 
@@ -93,14 +93,14 @@ public class JpaTest {
     @Test
     void testHqlFirstRow() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(Db.class).init()) {
-            log.info(repo.hqlFirstRow("select count(1) as total from Db", Long.class).toString());
+            log.info(repo.hqlRow("select count(1) as total from Db", Long.class).toString());
         }
     }
 
     @Test
     void testHqlFirstRow2() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(User.class).init()) {
-            Map record = repo.hqlFirstRow("select new map(Host as host,User as user) from User where User=:user", Map.class, "root");
+            Map record = repo.hqlRow("select new map(Host as host,User as user) from User where User=:user", Map.class, "root");
             log.info(record == null ? "" : record.toString());
         }
     }
@@ -108,7 +108,7 @@ public class JpaTest {
     @Test
     void testHqlFirstRow3() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(User.class).init()) {
-            User user = repo.hqlFirstRow("select new entity.User(Host,User) from User where User=:user", User.class, "root");
+            User user = repo.hqlRow("select new entity.User(Host,User) from User where User=:user", User.class, "root");
             log.info(user == null ? "" : user.toString());
         }
     }
@@ -141,7 +141,7 @@ public class JpaTest {
     @Test
     void testSqlFirstRow() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init()) {
-            log.info(repo.firstRow("select count(1) as total from db").get("total").toString());
+            log.info(repo.row("select count(1) as total from db").get("total").toString());
         }
     }
 
@@ -149,7 +149,7 @@ public class JpaTest {
     @Test
     void testSqlFirstRowWithParam() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init()) {
-            log.info(repo.firstRow("select * from db where Db=?",  Db.class,"sys").toString());
+            log.info(repo.row("select * from db where Db=?",  Db.class,"sys").toString());
         }
     }
 
@@ -157,7 +157,7 @@ public class JpaTest {
     @Test
     void testSqlRows() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init()) {
-            log.info(repo.rows("select * from db where Db=?", "sys").toString());
+            log.info(repo.sqlRows("select * from db where Db=?", "sys").toString());
         }
     }
 
@@ -165,7 +165,7 @@ public class JpaTest {
     @Test
     void testSqlRowsWithWrap() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init()) {
-            log.info(repo.rows("select * from db where Db=?", Db.class, "sys").toString());
+            log.info(repo.sqlRows("select * from db where Db=?", Db.class, "sys").toString());
         }
     }
 
@@ -181,7 +181,7 @@ public class JpaTest {
     @Test
     void testSqlIn() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init()) {
-            log.info(repo.rows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys")).toString());
+            log.info(repo.sqlRows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys")).toString());
 //        log.info(repo.rows("select * from db where Db in (:ids)",  Arrays.asList("sys", "xx")).toString());
 //         log.info(repo.rows("select * from db where Db in (?)", Arrays.asList("sys")).toString());
 //        log.info(repo.rows("select * from db where Db = ?", "sys").toString());
@@ -194,6 +194,7 @@ public class JpaTest {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true")
                 .entities(entity.Test.class)
                 .setAttr("hibernate.hbm2ddl.auto", "update")
+                .setAttr("hibernate.show_sql", true)
                 .init()) {
             log.info(repo.execute("insert into test(create_time, update_time, age, name) values(?,?,?,?)", new Date(), new Date(), 22, "name") + "");
         }
@@ -205,6 +206,7 @@ public class JpaTest {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true")
                 .entities(entity.Test.class)
                 .setAttr("hibernate.hbm2ddl.auto", "update")
+                .setAttr("hibernate.show_sql", true)
                 .init()) {
             log.info(repo.execute("update test set age=? where id=?", 11, 1) + "");
         }
@@ -216,8 +218,21 @@ public class JpaTest {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true")
                 .entities(entity.Test.class)
                 .setAttr("hibernate.hbm2ddl.auto", "update")
+                .setAttr("hibernate.show_sql", true)
                 .init()) {
             log.info(repo.execute("delete from test where id=?", 1) + "");
+        }
+    }
+
+
+    @Test
+    void testExist() {
+        try (Repo repo = new Repo("jdbc:mysql://localhost:3306/test?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true")
+                .entities(entity.Test.class)
+                .setAttr("hibernate.hbm2ddl.auto", "update")
+                .setAttr("hibernate.show_sql", true)
+                .init()) {
+            log.info("exist: " + repo.exist(entity.Test.class, (root, query, cb) -> cb.equal(root.get("id"), 2)));
         }
     }
 }
