@@ -91,6 +91,45 @@ List<实体Class> ls = repo.rows(实体Class, 条件)
 repo.count(实体Class, 条件(可选))
 ```
 
+### 原生sql操作
+#### 查询一条数据
+```java
+// 1. 无参
+repo.row("select count(1) as total from db").get("total")
+// 2. 传参
+Map<String, Object> result = repo.row("select * from db where Db=?", "sys");
+// 3. 包装结果
+Db result = repo.row("select * from db where Db=?", Db.class, "sys");
+```
+
+#### 分页查询
+```java
+// 1. 分页查询(List<Map>)
+Page<Db> pageData = repo.paging("select * from db where Db=?", 1, 10, "sys");
+// 2. 分页查询: 指定类型
+Page<Db> pageData = repo.paging("select * from db where Db=?", 1, 10, Db.class, "sys");
+```
+
+#### 查询多条数据
+```java
+// 1. 默认返回List<Map>
+List<Map<String, Object>> results = repo.rows("select * from db limit ?", 10);
+// 2. 指定返回结果
+List<Db> results = repo.rows("select * from db where Db=?", Db.class, "sys");
+// 3. 命名参数(in条件查询)
+List<Map<String, Object>> results = repo.rows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys"));
+```
+
+#### 更新,插入,删除
+```java
+// 1. 更新
+repo.execute("update test set age=? where id=?", 11, "4028b881766f3e5801766f3e87ba0000")
+// 2. 插入
+repo.execute("insert into test values(?,?,?,?,?)", UUID.randomUUID().toString().replace("-", ""), new Date(), new Date(), 22, "name")
+// 3. 删除
+repo.execute("delete from test where id=?", "ad3e4ff8f3fd4171aeeb9dd2c0aa6f0c")
+```
+
 ### hql查询
 #### 查询单个值
 ```java
@@ -116,39 +155,6 @@ List<Map> records = repo.hqlRows("select new map(Host as host,User as user) from
 #### 查询多个实体
 ```java
 List<User> users = repo.hqlRows("select new entity.User(Host,User) from User where User=:user", User.class, "root");
-```
-
-### 原生sql操作
-#### 查询一条数据
-```java
-// 1. 无参
-repo.row("select count(1) as total from db").get("total")
-// 2. 传参
-Map<String, Object> result = repo.row("select * from db where Db=?", "sys");
-// 3. 包装结果
-Db result = repo.row("select * from db where Db=?", Db.class, "sys");
-```
-
-#### 查询多条数据
-```java
-// 1. 默认返回List<Map>
-List<Map<String, Object>> results = repo.rows("select * from db limit ?", 10);
-// 2. 指定返回结果
-List<Db> results = repo.rows("select * from db where Db=?", Db.class, "sys");
-// 3. 分页查询
-Page<Db> pageData = repo.paging("select * from db where Db=?", 1, 10, Db.class, "sys");
-// 4. 命名参数(in条件查询)
-List<Map<String, Object>> results = repo.rows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys"));
-```
-
-#### 更新,插入,删除
-```java
-// 1. 更新
-repo.execute("update test set age=? where id=?", 11, "4028b881766f3e5801766f3e87ba0000")
-// 2. 插入
-repo.execute("insert into test values(?,?,?,?,?)", UUID.randomUUID().toString().replace("-", ""), new Date(), new Date(), 22, "name")
-// 3. 删除
-repo.execute("delete from test where id=?", "ad3e4ff8f3fd4171aeeb9dd2c0aa6f0c")
 ```
 
 ### 自定义操作
