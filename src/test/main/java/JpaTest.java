@@ -7,7 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class JpaTest {
 
@@ -75,6 +78,21 @@ public class JpaTest {
 
 
     @Test
+    void testEntityById() {
+        try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(Db.class).init()) {
+            log.info(repo.byId(Db.class, "sys").toString());
+        }
+    }
+
+
+    @Test
+    void testEntityByAttr() {
+        try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(Db.class).init()) {
+            log.info(repo.byAttr(Db.class, "User", "mysql.sys").toString());
+        }
+    }
+
+    @Test
     void testEntity() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(Db.class).init()) {
             log.info(repo.row(Db.class, (root, query, cb) -> cb.equal(root.get("Db"), "sys")).Host);
@@ -85,7 +103,7 @@ public class JpaTest {
     @Test
     void testEntityPage() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(Db.class).init()) {
-            log.info(repo.page(Db.class, 1, 10, (root, query, cb) -> cb.equal(root.get("Db"), "sys")).toString());
+            log.info(repo.paging(Db.class, 1, 10, (root, query, cb) -> cb.equal(root.get("Db"), "sys")).toString());
         }
     }
 
@@ -157,7 +175,7 @@ public class JpaTest {
     @Test
     void testSqlRows() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init()) {
-            log.info(repo.sqlRows("select * from db where Db=?", "sys").toString());
+            log.info(repo.rows("select * from db where Db=?", "sys").toString());
         }
     }
 
@@ -165,7 +183,7 @@ public class JpaTest {
     @Test
     void testSqlRowsWithWrap() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init()) {
-            log.info(repo.sqlRows("select * from db where Db=?", Db.class, "sys").toString());
+            log.info(repo.rows("select * from db where Db=?", Db.class, "sys").toString());
         }
     }
 
@@ -173,7 +191,7 @@ public class JpaTest {
     @Test
     void testSqlPage() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init()) {
-            log.info(repo.sqlPage("select * from db where Db=?", 1, 10, Db.class, "sys").toString());
+            log.info(repo.paging("select * from db where Db=?", 1, 10, Db.class, "sys").toString());
         }
     }
 
@@ -181,7 +199,7 @@ public class JpaTest {
     @Test
     void testSqlIn() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").init()) {
-            log.info(repo.sqlRows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys")).toString());
+            log.info(repo.rows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys")).toString());
 //        log.info(repo.rows("select * from db where Db in (:ids)",  Arrays.asList("sys", "xx")).toString());
 //         log.info(repo.rows("select * from db where Db in (?)", Arrays.asList("sys")).toString());
 //        log.info(repo.rows("select * from db where Db = ?", "sys").toString());

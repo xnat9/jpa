@@ -67,12 +67,12 @@ public class Test2 extends LongIdEntity {
 ```
 #### 查询一个实体
 ```java
-Db db = repo.find(Db.class, (root, query, cb) -> cb.equal(root.get("Db"), "sys"));
+Db db = repo.row(Db.class, (root, query, cb) -> cb.equal(root.get("Db"), "sys"));
 ```
 
 #### 分页查询实体
 ```java
-Page<Db> pageData = repo.findPage(Db.class, 1, 10, (root, query, cb) -> cb.equal(root.get("Db"), "sys"));
+Page<Db> pageData = repo.paging(Db.class, 1, 10, (root, query, cb) -> cb.equal(root.get("Db"), "sys"));
 ```
 
 #### 其它实体方法
@@ -80,11 +80,13 @@ Page<Db> pageData = repo.findPage(Db.class, 1, 10, (root, query, cb) -> cb.equal
 // 保存或更新实体
 repo.saveOrUpdate(实体对象)
 // 根据id查询实体
-repo.findById(实体Class, id值)
+repo.byId(实体Class, id值)
+// 根据某个属性查询实体
+repo.byAttr(实体Class, 属性名, 属性值)
 // 删除一个实体
 repo.delete(实体对象)
 // 查询多个实体
-repo.findList(实体Class, 条件)
+List<实体Class> ls = repo.rows(实体Class, 条件)
 // 统计实体个数
 repo.count(实体Class, 条件(可选))
 ```
@@ -92,15 +94,15 @@ repo.count(实体Class, 条件(可选))
 ### hql查询
 #### 查询单个值
 ```java
-Long count = repo.hqlFirstRow("select count(1) as total from Db", Long.class);
+Long count = repo.hqlRow("select count(1) as total from Db", Long.class);
 ```
 #### 查询一条记录
 ```java
-Map record = repo.hqlFirstRow("select new map(Host as host,User as user) from User where User=:user", Map.class, "root");
+Map record = repo.hqlRow("select new map(Host as host,User as user) from User where User=:user", Map.class, "root");
 ```
 #### 查询一个实体
 ```java
-User record = repo.hqlFirstRow("select new entity.User(Host,User) from User where User=:user", User.class, "root");
+User record = repo.hqlRow("select new entity.User(Host,User) from User where User=:user", User.class, "root");
 ```
 
 #### 查询多个单值
@@ -120,11 +122,11 @@ List<User> users = repo.hqlRows("select new entity.User(Host,User) from User whe
 #### 查询一条数据
 ```java
 // 1. 无参
-repo.firstRow("select count(1) as total from db").get("total")
+repo.row("select count(1) as total from db").get("total")
 // 2. 传参
-Map<String, Object> result = repo.firstRow("select * from db where Db=?", "sys");
+Map<String, Object> result = repo.row("select * from db where Db=?", "sys");
 // 3. 包装结果
-Db result = repo.firstRow("select * from db where Db=?", Db.class, "sys");
+Db result = repo.row("select * from db where Db=?", Db.class, "sys");
 ```
 
 #### 查询多条数据
@@ -134,7 +136,7 @@ List<Map<String, Object>> results = repo.rows("select * from db limit ?", 10);
 // 2. 指定返回结果
 List<Db> results = repo.rows("select * from db where Db=?", Db.class, "sys");
 // 3. 分页查询
-Page<Db> pageData = repo.sqlPage("select * from db where Db=?", 1, 10, Db.class, "sys");
+Page<Db> pageData = repo.paging("select * from db where Db=?", 1, 10, Db.class, "sys");
 // 4. 命名参数(in条件查询)
 List<Map<String, Object>> results = repo.rows("select * from db where Db = :db and Db in (:ids)", "sys", Arrays.asList("sys"));
 ```

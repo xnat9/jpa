@@ -309,6 +309,23 @@ public class Repo implements AutoCloseable {
 
 
     /**
+     * 根据某个属性查找实体
+     * @param eType 实体类型
+     * @param attrName 属性名
+     * @param attrValue 属性值, 如果为 null: sql 查询 is null
+     * @return 实体 {@link E}
+     */
+    public <E extends IEntity> E byAttr(Class<E> eType, String attrName, Object attrValue) {
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        if (attrName == null) throw new IllegalArgumentException("Param attrName required");
+        return row(eType, (root, query, cb) -> {
+            if (attrValue == null) return cb.isNull(root.get(attrName));
+            else return cb.equal(root.get(attrName), attrValue);
+        });
+    }
+
+
+    /**
      * 查询
      * @param eType 实体类型
      * @param spec 条件
@@ -429,7 +446,7 @@ public class Repo implements AutoCloseable {
      * @param params 参数
      * @return 多条记录 {@link List<Map>}
      */
-    public List<Map> sqlRows(String sql, Object...params) { return sqlRows(sql, Map.class, params); }
+    public List<Map> rows(String sql, Object...params) { return rows(sql, Map.class, params); }
 
 
     /**
@@ -440,7 +457,7 @@ public class Repo implements AutoCloseable {
      * @param <R> 包装类型
      * @return 多条记录 {@link List<R> }
      */
-    public <R> List<R> sqlRows(String sql, Class<R> wrap, Object...params) {
+    public <R> List<R> rows(String sql, Class<R> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql required");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
         return trans(session -> fillParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap)), params).list());
@@ -455,8 +472,8 @@ public class Repo implements AutoCloseable {
      * @param params sql参数
      * @return 一页记录 {@link Page<Map>}
      */
-    public Page<Map> sqlPage(String sql, Integer page, Integer pageSize, Object...params) {
-        return sqlPage(sql, page, pageSize, Map.class, params);
+    public Page<Map> paging(String sql, Integer page, Integer pageSize, Object...params) {
+        return paging(sql, page, pageSize, Map.class, params);
     }
 
 
@@ -470,7 +487,7 @@ public class Repo implements AutoCloseable {
      * @param <T> 包装类型
      * @return 一页记录 {@link Page<T> }
      */
-    public <T> Page<T> sqlPage(String sql, Integer page, Integer pageSize, Class<T> wrap, Object...params) {
+    public <T> Page<T> paging(String sql, Integer page, Integer pageSize, Class<T> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql required");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
         if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
@@ -635,8 +652,8 @@ public class Repo implements AutoCloseable {
      * @param <E> {@link IEntity}
      * @return 一页实体 {@link Page<E>}
      */
-    public <E extends IEntity> Page<E> page(Class<E> eType, Integer page, Integer pageSize) {
-        return page(eType, page, pageSize, null);
+    public <E extends IEntity> Page<E> paging(Class<E> eType, Integer page, Integer pageSize) {
+        return paging(eType, page, pageSize, null);
     }
 
 
@@ -648,7 +665,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 一页实体 {@link Page}
      */
-    public <E extends IEntity> Page<E> page(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec spec) {
+    public <E extends IEntity> Page<E> paging(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
         if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
