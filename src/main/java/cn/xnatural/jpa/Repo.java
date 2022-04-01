@@ -326,6 +326,26 @@ public class Repo implements AutoCloseable {
 
 
     /**
+     * 根据某个属性查找实体
+     * @param eType 实体类型
+     * @param attrName1 属性名
+     * @param attrValue1 属性值, 如果为 null: sql 查询 is null
+     * @param attrName2 属性名
+     * @param attrValue2 属性值, 如果为 null: sql 查询 is null
+     * @return 实体 {@link E}
+     */
+    public <E extends IEntity> E byAttr(Class<E> eType, String attrName1, Object attrValue1, String attrName2, Object attrValue2) {
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        if (attrName1 == null) throw new IllegalArgumentException("Param attrName1 required");
+        if (attrName2 == null) throw new IllegalArgumentException("Param attrName2 required");
+        return row(eType, (root, query, cb) -> cb.and(
+                attrValue1 == null ? cb.isNull(root.get(attrName1)) : cb.equal(root.get(attrName1), attrValue1),
+                attrValue2 == null ? cb.isNull(root.get(attrName2)) : cb.equal(root.get(attrName2), attrValue2)
+        ));
+    }
+
+
+    /**
      * 查询
      * @param eType 实体类型
      * @param spec 条件

@@ -89,6 +89,7 @@ public class JpaTest {
     void testEntityByAttr() {
         try (Repo repo = new Repo("jdbc:mysql://localhost:3306/mysql?useSSL=false&user=root&password=root&allowPublicKeyRetrieval=true").entities(Db.class).init()) {
             log.info(repo.byAttr(Db.class, "User", "mysql.sys").toString());
+            log.info(repo.byAttr(Db.class, "User", "mysql.sys", "Host", "localhost").toString());
         }
     }
 
