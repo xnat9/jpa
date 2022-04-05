@@ -7,11 +7,25 @@
     <groupId>cn.xnatural</groupId>
     <artifactId>jpa</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.10</version>
+    <version>1.1.0</version>
 
     <url>https://gitee.com/xnat/jpa</url>
     <name>jpa</name>
     <description>jpa: hibernate 封装</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>aliyun</id>
+            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -100,20 +114,6 @@
         </contributor>
     </contributors>
 
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
-
-    <repositories>
-        <repository>
-            <id>aliyun</id>
-            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
 
     <build>
         <plugins>

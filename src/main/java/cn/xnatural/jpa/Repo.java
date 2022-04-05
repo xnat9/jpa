@@ -317,7 +317,7 @@ public class Repo implements AutoCloseable {
      */
     public <E extends IEntity> E byAttr(Class<E> eType, String attrName, Object attrValue) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
-        if (attrName == null) throw new IllegalArgumentException("Param attrName required");
+        if (attrName == null || attrName.isEmpty()) throw new IllegalArgumentException("Param attrName required");
         return row(eType, (root, query, cb) -> {
             if (attrValue == null) return cb.isNull(root.get(attrName));
             else return cb.equal(root.get(attrName), attrValue);
@@ -336,8 +336,8 @@ public class Repo implements AutoCloseable {
      */
     public <E extends IEntity> E byAttr(Class<E> eType, String attrName1, Object attrValue1, String attrName2, Object attrValue2) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
-        if (attrName1 == null) throw new IllegalArgumentException("Param attrName1 required");
-        if (attrName2 == null) throw new IllegalArgumentException("Param attrName2 required");
+        if (attrName1 == null || attrName1.isEmpty()) throw new IllegalArgumentException("Param attrName1 required");
+        if (attrName2 == null || attrName2.isEmpty()) throw new IllegalArgumentException("Param attrName2 required");
         return row(eType, (root, query, cb) -> cb.and(
                 attrValue1 == null ? cb.isNull(root.get(attrName1)) : cb.equal(root.get(attrName1), attrValue1),
                 attrValue2 == null ? cb.isNull(root.get(attrName2)) : cb.equal(root.get(attrName2), attrValue2)
@@ -351,7 +351,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 实体{@link E}
      */
-    public <E extends IEntity> E row(Class<E> eType, CriteriaSpec spec) {
+    public <E extends IEntity> E row(Class<E> eType, CriteriaSpec<E, E> spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();
@@ -488,12 +488,12 @@ public class Repo implements AutoCloseable {
      * sql 分页查询
      * @param sql sql 语句
      * @param page 第几页 >=1
-     * @param pageSize 每页大小 >=1
+     * @param limit 每页大小 >=1
      * @param params sql参数
      * @return 一页记录 {@link Page<Map>}
      */
-    public Page<Map> paging(String sql, Integer page, Integer pageSize, Object...params) {
-        return paging(sql, page, pageSize, Map.class, params);
+    public Page<Map> paging(String sql, Integer page, Integer limit, Object...params) {
+        return paging(sql, page, limit, Map.class, params);
     }
 
 
@@ -501,24 +501,24 @@ public class Repo implements AutoCloseable {
      * sql 分页查询
      * @param sql sql 语句
      * @param page 第几页 >=1
-     * @param pageSize 每页大小 >=1
+     * @param limit 每页大小 >=1
      * @param wrap 结果包装类型
      * @param params sql参数
      * @param <T> 包装类型
      * @return 一页记录 {@link Page<T> }
      */
-    public <T> Page<T> paging(String sql, Integer page, Integer pageSize, Class<T> wrap, Object...params) {
+    public <T> Page<T> paging(String sql, Integer page, Integer limit, Class<T> wrap, Object...params) {
         if (sql == null || sql.isEmpty()) throw new IllegalArgumentException("Param sql required");
         if (wrap == null) throw new IllegalArgumentException("Param warp required");
         if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
-        if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
+        if (limit == null || limit < 1) throw new IllegalArgumentException("Param limit >=1");
         return trans(session -> {
             // 当前页数据查询
             Query listQuery = fillParam(session.createNativeQuery(sql).unwrap(NativeQueryImpl.class).setResultTransformer(warpTransformer(wrap)), params);
             // 总条数查询
             Query countQuery = fillParam(session.createNativeQuery("select count(1) from (" + sql + ") t1").unwrap(NativeQueryImpl.class), params);
-            return new Page<>().setPage(page).setPageSize(pageSize)
-                    .setList(listQuery.setFirstResult((page - 1) * pageSize).setMaxResults(pageSize).list())
+            return new Page<>().setPage(page).setPageSize(limit)
+                    .setList(listQuery.setFirstResult((page - 1) * limit).setMaxResults(limit).list())
                     .setTotalRow(((Number) countQuery.setMaxResults(1).getSingleResult()).longValue());
         });
     }
@@ -621,7 +621,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 多个实体 {@link List<E>}
      */
-    public <E extends IEntity> List<E> rows(Class<E> eType, CriteriaSpec spec) {
+    public <E extends IEntity> List<E> rows(Class<E> eType, CriteriaSpec<E, E> spec) {
         return rows(eType, null, null, spec);
     }
 
@@ -646,7 +646,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 多个实体 {@link List<E>}
      */
-    public <E extends IEntity> List<E> rows(Class<E> eType, Integer start, Integer limit, CriteriaSpec spec) {
+    public <E extends IEntity> List<E> rows(Class<E> eType, Integer start, Integer limit, CriteriaSpec<E, E> spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         if (start != null && start < 0) throw new IllegalArgumentException("Param start >= 0 or not give");
         if (limit != null && limit <= 0) throw new IllegalArgumentException("Param limit must > 0 or not give");
@@ -668,36 +668,48 @@ public class Repo implements AutoCloseable {
      * 分页查询
      * @param eType 实体类型
      * @param page 当前第几页. >=1
-     * @param pageSize 每页大小 >=1
+     * @param limit 每页大小 >=1
      * @param <E> {@link IEntity}
      * @return 一页实体 {@link Page<E>}
      */
-    public <E extends IEntity> Page<E> paging(Class<E> eType, Integer page, Integer pageSize) {
-        return paging(eType, page, pageSize, null);
+    public <E extends IEntity> Page<E> paging(Class<E> eType, Integer page, Integer limit) {
+        return paging(eType, page, limit, null);
     }
-
 
     /**
      * 分页查询
-     * @param eType
+     * @param eType 实体类型
      * @param page 当前第几页. >=1
-     * @param pageSize 每页大小 >=1
-     * @param spec 条件
+     * @param limit 每页大小 >=1
+     * @param listSpec 条件
      * @return 一页实体 {@link Page}
      */
-    public <E extends IEntity> Page<E> paging(Class<E> eType, Integer page, Integer pageSize, CriteriaSpec spec) {
+    public <E extends IEntity> Page<E> paging(Class<E> eType, Integer page, Integer limit, CriteriaSpec<E, E> listSpec) {
+        return paging(eType, page, limit, listSpec, null);
+    }
+
+    /**
+     * 分页查询
+     * @param eType 实体类型
+     * @param page 当前第几页. >=1
+     * @param limit 每页大小 >=1
+     * @param listSpec 条件
+     * @param countSpec 条件
+     * @return 一页实体 {@link Page}
+     */
+    public <E extends IEntity> Page<E> paging(Class<E> eType, Integer page, Integer limit, CriteriaSpec<E, E> listSpec, CriteriaSpec<E, Long> countSpec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         if (page == null || page < 1) throw new IllegalArgumentException("Param page >=1");
-        if (pageSize == null || pageSize < 1) throw new IllegalArgumentException("Param pageSize >=1");
+        if (limit == null || limit < 1) throw new IllegalArgumentException("Param limit >=1");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();
             CriteriaQuery<E> query = cb.createQuery(eType);
             Root<E> root = query.from(eType);
-            Object p = spec == null ? null : spec.toPredicate(root, query, cb);
+            Object p = listSpec == null ? null : listSpec.toPredicate(root, query, cb);
             if (p instanceof Predicate) query.where((Predicate) p);
-            return new Page<E>().setPage(page).setPageSize(pageSize)
-                    .setList(session.createQuery(query).setFirstResult((page - 1) * pageSize).setMaxResults(pageSize).list())
-                    .setTotalRow(count(eType, spec));
+            return new Page<E>().setPage(page).setPageSize(limit)
+                    .setList(session.createQuery(query).setFirstResult((page - 1) * limit).setMaxResults(limit).list())
+                    .setTotalRow(count(eType, countSpec == null ? ((CriteriaSpec) listSpec) : countSpec));
         });
     }
 
@@ -717,18 +729,68 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return 条数
      */
-    public <E extends IEntity> long count(Class<E> eType, CriteriaSpec spec) {
+    public <E extends IEntity> long count(Class<E> eType, CriteriaSpec<E, Long> spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();
             CriteriaQuery<Long> query = cb.createQuery(Long.class);
             Root<E> root = query.from(eType);
-            Object p = spec == null ? null : spec.toPredicate(root, query, cb);
             if (query.isDistinct()) query.select(cb.countDistinct(root));
             else query.select(cb.count(root));
-            query.orderBy(Collections.emptyList());
+            Object p = spec == null ? null : spec.toPredicate(root, query, cb);
             if (p instanceof Predicate) query.where((Predicate) p);
-            return ((Number) session.createQuery(query).getSingleResult()).longValue();
+            query.orderBy(Collections.emptyList()); // 移除排序
+            return session.createQuery(query).getSingleResult();
+        });
+    }
+
+
+    /**
+     * 根据实体类, 统计
+     * @param eType 实体类型
+     * @param attrName 属性名
+     * @param attrValue 属性值
+     * @return 条数
+     */
+    public <E extends IEntity> long count(Class<E> eType, String attrName, Object attrValue) {
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        if (attrName == null || attrName.isEmpty()) throw new IllegalArgumentException("Param attrName required");
+        return trans(session -> {
+            CriteriaBuilder cb = session.getCriteriaBuilder();
+            CriteriaQuery<Long> query = cb.createQuery(Long.class);
+            Root<E> root = query.from(eType);
+            if (query.isDistinct()) query.select(cb.countDistinct(root));
+            else query.select(cb.count(root));
+            query.where(attrValue == null ? cb.isNull(root.get(attrName)) : cb.equal(root.get(attrName), attrValue));
+            return session.createQuery(query).getSingleResult();
+        });
+    }
+
+
+    /**
+     * 根据实体类, 统计
+     * @param eType 实体类型
+     * @param attrName1 属性名1
+     * @param attrValue1 属性值1
+     * @param attrName2 属性名2
+     * @param attrValue2 属性值2
+     * @return 条数
+     */
+    public <E extends IEntity> long count(Class<E> eType, String attrName1, Object attrValue1, String attrName2, Object attrValue2) {
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        if (attrName1 == null || attrName1.isEmpty()) throw new IllegalArgumentException("Param attrName1 required");
+        if (attrName2 == null || attrName2.isEmpty()) throw new IllegalArgumentException("Param attrName2 required");
+        return trans(session -> {
+            CriteriaBuilder cb = session.getCriteriaBuilder();
+            CriteriaQuery<Long> query = cb.createQuery(Long.class);
+            Root<E> root = query.from(eType);
+            if (query.isDistinct()) query.select(cb.countDistinct(root));
+            else query.select(cb.count(root));
+            query.where(cb.and(
+                    attrValue1 == null ? cb.isNull(root.get(attrName1)) : cb.equal(root.get(attrName1), attrValue1),
+                    attrValue2 == null ? cb.isNull(root.get(attrName2)) : cb.equal(root.get(attrName2), attrValue2)
+            ));
+            return session.createQuery(query).getSingleResult();
         });
     }
 
@@ -739,7 +801,7 @@ public class Repo implements AutoCloseable {
      * @param spec 条件
      * @return true: 存在, false: 不存在
      */
-    public <E extends IEntity> boolean exist(Class<E> eType, CriteriaSpec spec) {
+    public <E extends IEntity> boolean exist(Class<E> eType, CriteriaSpec<E, Long> spec) {
         if (eType == null) throw new IllegalArgumentException("Param eType required");
         return trans(session -> {
             CriteriaBuilder cb = session.getCriteriaBuilder();
@@ -750,6 +812,63 @@ public class Repo implements AutoCloseable {
             else query.select(cb.count(root));
             query.orderBy(Collections.emptyList());
             if (p instanceof Predicate) query.where((Predicate) p);
+            return session.createQuery(query).setMaxResults(1).getSingleResult() > 0;
+        });
+    }
+
+
+    /**
+     * 表中是否存在数据
+     * @param eType 实体类型
+     * @return true: 存在, false: 不存在
+     */
+    public <E extends IEntity> boolean exist(Class<E> eType) { return exist(eType, null); }
+
+
+    /**
+     * 根据实体类, 统计
+     * @param eType 实体类型
+     * @param attrName 属性名
+     * @param attrValue 属性值
+     * @return 条数
+     */
+    public <E extends IEntity> boolean exist(Class<E> eType, String attrName, Object attrValue) {
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        if (attrName == null || attrName.isEmpty()) throw new IllegalArgumentException("Param attrName required");
+        return trans(session -> {
+            CriteriaBuilder cb = session.getCriteriaBuilder();
+            CriteriaQuery<Long> query = cb.createQuery(Long.class);
+            Root<E> root = query.from(eType);
+            if (query.isDistinct()) query.select(cb.countDistinct(root));
+            else query.select(cb.count(root));
+            query.where(attrValue == null ? cb.isNull(root.get(attrName)) : cb.equal(root.get(attrName), attrValue));
+            return session.createQuery(query).setMaxResults(1).getSingleResult() > 0;
+        });
+    }
+
+
+    /**
+     * 实体是否存在
+     * @param eType 实体类型
+     * @param attrName1 属性名1
+     * @param attrValue1 属性值1
+     * @param attrName2 属性名2
+     * @param attrValue2 属性值2
+     */
+    public <E extends IEntity> boolean exist(Class<E> eType, String attrName1, Object attrValue1, String attrName2, Object attrValue2) {
+        if (eType == null) throw new IllegalArgumentException("Param eType required");
+        if (attrName1 == null || attrName1.isEmpty()) throw new IllegalArgumentException("Param attrName1 required");
+        if (attrName2 == null || attrName2.isEmpty()) throw new IllegalArgumentException("Param attrName2 required");
+        return trans(session -> {
+            CriteriaBuilder cb = session.getCriteriaBuilder();
+            CriteriaQuery<Long> query = cb.createQuery(Long.class);
+            Root<E> root = query.from(eType);
+            if (query.isDistinct()) query.select(cb.countDistinct(root));
+            else query.select(cb.count(root));
+            query.where(cb.and(
+                    attrValue1 == null ? cb.isNull(root.get(attrName1)) : cb.equal(root.get(attrName1), attrValue1),
+                    attrValue2 == null ? cb.isNull(root.get(attrName2)) : cb.equal(root.get(attrName2), attrValue2)
+            ));
             return session.createQuery(query).setMaxResults(1).getSingleResult() > 0;
         });
     }

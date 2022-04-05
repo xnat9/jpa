@@ -6,7 +6,7 @@ jpa: 封装hibernate
 <dependency>
     <groupId>cn.xnatural</groupId>
     <artifactId>jpa</artifactId>
-    <version>1.0.9</version>
+    <version>1.0.8</version>
 </dependency>
 ```
 
@@ -89,6 +89,8 @@ repo.delete(实体对象)
 List<实体Class> ls = repo.rows(实体Class, 条件)
 // 统计实体个数
 repo.count(实体Class, 条件(可选))
+// 实体是否存在
+repo.exist(实体Class, 条件(可选))
 ```
 
 ### 原生sql操作
